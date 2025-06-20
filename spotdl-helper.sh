@@ -310,6 +310,7 @@ menu() {
                     baixar_musicas
                 else
                     echo -e "${RED}Arquivo de configuração não encontrado. Crie um primeiro (opção 2).${RESET}"
+                    exit 1
                 fi
                 ;;
             2)
@@ -320,6 +321,7 @@ menu() {
                     atualizar_itens
                 else
                     echo -e "${RED}Arquivo de configuração não encontrado. Crie um primeiro (opção 2).${RESET}"
+                    exit 1
                 fi
                 ;;
             4)
@@ -327,7 +329,8 @@ menu() {
                     echo -e "${CYAN}Conteúdo atual de $CONFIG_FILE:${RESET}"
                     cat "$CONFIG_FILE"
                 else
-                    echo -e "${RED}Nenhuma configuração encontrada ainda.${RESET}"
+                    echo -e "${RED}Arquivo de configuração não encontrado. Crie um primeiro (opção 2).${RESET}"
+                    exit 1
                 fi
                 ;;
             0)
