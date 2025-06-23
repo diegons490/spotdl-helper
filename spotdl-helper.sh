@@ -134,7 +134,7 @@ if [[ -x "$BINARIO_LOCAL" ]]; then
 else
     clear
     printf "\n${YELLOW}${no_local_spotdl}${RESET}\n"
-    if perguntar "\n${download_latest_version}\n"; then
+    if perguntar "${download_latest_version}"; then
         printf "${CYAN}\n${downloading_latest}${RESET}\n"
         URL_LATEST=$(curl -s https://api.github.com/repos/spotDL/spotify-downloader/releases/latest | \
                      jq -r '.assets[] | select(.name | test("spotdl-.*-linux")) | .browser_download_url' | head -n1)

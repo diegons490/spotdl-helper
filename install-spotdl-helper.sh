@@ -2,8 +2,7 @@
 set -e
 
 REPO_URL="https://github.com/diegons490/spotdl-helper"
-INSTALL_DIR="$HOME/.local/share/spotdl-helper"
-BIN_DIR="$HOME/.local/bin"
+INSTALL_DIR="$HOME/.local/bin/spotdl-helper"
 DESKTOP_DIR="$HOME/.local/share/applications"
 ICON_NAME="spotdl-helper.icon"
 SCRIPT_NAME="spotdl-helper.sh"
@@ -11,10 +10,10 @@ LAUNCHER_NAME="spotdl-helper.desktop"
 
 echo "Installing SpotDL Helper..."
 
-# Ensure required directories
-mkdir -p "$BIN_DIR" "$DESKTOP_DIR"
+# Criar diretórios necessários
+mkdir -p "$INSTALL_DIR" "$DESKTOP_DIR"
 
-# If already running from a git clone, copy files directly
+# Copiar arquivos locais ou clonar repo
 if [[ -f "$SCRIPT_NAME" && -f "$ICON_NAME" && -d "lang" ]]; then
     echo "Using local files..."
     rm -rf "$INSTALL_DIR"
@@ -26,11 +25,10 @@ else
     git clone --depth=1 "$REPO_URL" "$INSTALL_DIR"
 fi
 
-# Create executable symlink
-ln -sf "$INSTALL_DIR/$SCRIPT_NAME" "$BIN_DIR/spotdl-helper"
-chmod +x "$BIN_DIR/spotdl-helper"
+# Tornar script executável
+chmod +x "$INSTALL_DIR/$SCRIPT_NAME"
 
-# Detect terminal
+# Detectar terminal instalado
 TERMINAL=$(command -v x-terminal-emulator || \
            command -v gnome-terminal || \
            command -v konsole || \
@@ -42,18 +40,38 @@ TERMINAL=$(command -v x-terminal-emulator || \
            command -v kitty || \
            command -v xterm)
 
-# Create .desktop launcher
+if [[ -z "$TERMINAL" ]]; then
+    echo "Warning: No terminal emulator found, defaulting to xterm."
+    TERMINAL="xterm"
+fi
+
+case "$(basename "$TERMINAL")" in
+    gnome-terminal|xfce4-terminal|mate-terminal|tilix)
+        TERMINAL_CMD="--"
+        ;;
+    konsole)
+        TERMINAL_CMD="-e"
+        ;;
+    *)
+        TERMINAL_CMD="-e"
+        ;;
+esac
+
+# Criar atalho .desktop com PATH e terminal correto, sem link simbólico
 cat > "$DESKTOP_DIR/$LAUNCHER_NAME" <<EOF
 [Desktop Entry]
 Name=SpotDL Helper
-Exec=$TERMINAL -e spotdl-helper
+Exec=$TERMINAL $TERMINAL_CMD bash -c "$INSTALL_DIR/$SCRIPT_NAME; exec bash"
 Icon=$INSTALL_DIR/$ICON_NAME
-Terminal=false
+Terminal=true
 Type=Application
 Categories=AudioVideo;Utility;
 EOF
 
+
 chmod +x "$DESKTOP_DIR/$LAUNCHER_NAME"
 
 echo "Installation complete!"
-echo "You can launch SpotDL Helper from your app menu or by running: spotdl-helper"
+echo "You can launch SpotDL Helper from your application menu."
+echo "To run from terminal, execute:"
+echo "  bash \"$INSTALL_DIR/$SCRIPT_NAME\""
