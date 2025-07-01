@@ -50,16 +50,16 @@ for file in "$INSTALL_DIR"/spotdl-*; do
     fi
 done
 
-# Create .desktop shortcut
+# Create .desktop shortcut (without opening extra terminal)
 cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=SpotDL Helper
 Comment=Download your music with SpotDL
-Exec=$LAUNCHER_SOURCE
+Exec=bash -c '$LAUNCHER_SOURCE > /dev/null 2>&1'
 Icon=$ICON_DIR/$ICON_NAME
-Terminal=true
+Terminal=false
 Categories=Audio;Utility;
 EOF
 
