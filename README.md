@@ -100,6 +100,11 @@ chmod +x install.sh
 
 ---
 
+> ⚠️ **Important Notice:**  
+> This version uses the **local version** of the application, so it is **not compatible** with versions installed in other ways (e.g., system-wide installs via pip, package managers, Snap, etc.).
+
+---
+
 ## 🧩 Credits
 
 This project is just a helper interface for the excellent:
