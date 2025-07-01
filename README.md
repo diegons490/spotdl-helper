@@ -14,10 +14,7 @@ SpotDL Helper is a **command-line (CLI) frontend** that makes using spotDL easie
 
 ## 🎬 Preview
 
-<!-- Add screenshots or GIFs showing how it works here -->
-<!-- Example:
-![CLI Preview](preview/cli-demo.gif)
--->
+![screenshot](/preview.png?raw=true)
 
 ---
 
