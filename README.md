@@ -72,11 +72,11 @@ You can install SpotDL Helper directly from the terminal using the official inst
 
 ### With curl:
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/diegons490/spotdl-helper/main/install.sh)
+curl -fsSL https://raw.githubusercontent.com/diegons490/spotdl-helper/main/install.sh | bash
 ```
 ### Or with wget:
 ```
-bash <(wget -qO- https://raw.githubusercontent.com/diegons490/spotdl-helper/main/install.sh)
+wget -qO- https://raw.githubusercontent.com/diegons490/spotdl-helper/main/install.sh | bash
 ```
 ### Alternative: Manual installation from GitHub repository:
 ##### If you prefer, you can clone the repository and run the installer script manually:
