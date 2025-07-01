@@ -13,7 +13,6 @@ printf "${BOLD}${CYAN}Starting SpotDL Helper uninstallation...${RESET}\n"
 
 # Main directories
 INSTALL_DIR="$HOME/.local/share/spotdl-helper"
-BIN_LINK="$HOME/.local/bin/spotdl-helper"
 DESKTOP_FILE="$HOME/.local/share/applications/spotdl-helper.desktop"
 CONFIG_DIR="$HOME/.config/spotdl-helper"
 SPOTDL_DIR="$HOME/.spotdl"
@@ -69,12 +68,7 @@ if [[ -f "$DESKTOP_FILE" ]] || [[ -L "$DESKTOP_FILE" ]]; then
     fi
 fi
 
-# 2. Remove symbolic link
-if [[ -L "$BIN_LINK" ]] || [[ -f "$BIN_LINK" ]]; then
-    rm -f "$BIN_LINK" && log_removal "$BIN_LINK" "Binary link" && ((removed++))
-fi
-
-# 3. Remove main installation directory (with detailed logging)
+# 2. Remove main installation directory (with detailed logging)
 if [[ -d "$INSTALL_DIR" ]]; then
     printf "\n${CYAN}Removing installation directory:${RESET}\n"
     # Log contents before removal
@@ -84,7 +78,7 @@ if [[ -d "$INSTALL_DIR" ]]; then
     rm -rf "$INSTALL_DIR" && log_removal "$INSTALL_DIR" "Main installation" && ((removed++))
 fi
 
-# 4. Remove configuration files (with detailed logging)
+# 3. Remove configuration files (with detailed logging)
 if [[ -d "$CONFIG_DIR" ]]; then
     if $AUTO_YES; then
         printf "\n${CYAN}Removing configuration directory:${RESET}\n"
@@ -105,7 +99,7 @@ if [[ -d "$CONFIG_DIR" ]]; then
     fi
 fi
 
-# 5. Remove additional SpotDL directories (with detailed logging)
+# 4. Remove additional SpotDL directories (with detailed logging)
 if [[ -d "$SPOTDL_DIR" ]]; then
     printf "\n${CYAN}Removing SpotDL directory:${RESET}\n"
     find "$SPOTDL_DIR" -maxdepth 1 -type f -exec echo "  Found: {}" \;
@@ -118,7 +112,7 @@ if [[ -d "$SPOTDL_HELPER_DIR" ]]; then
     rm -rf "$SPOTDL_HELPER_DIR" && log_removal "$SPOTDL_HELPER_DIR" "SpotDL Helper config" && ((removed++))
 fi
 
-# 6. Remove logs (with detailed logging)
+# 5. Remove logs (with detailed logging)
 if [[ -d "$LOG_DIR" ]]; then
     printf "\n${CYAN}Removing log directory:${RESET}\n"
     find "$LOG_DIR" -type f -name "*.log" -exec echo "  Log file: {}" \;

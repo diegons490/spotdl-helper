@@ -12,18 +12,16 @@ BOLD="\033[1m"
 # Main directories
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="$HOME/.local/share/spotdl-helper"
-BIN_DIR="$HOME/.local/bin"
 DESKTOP_DIR="$HOME/.local/share/applications"
 ICON_DIR="$INSTALL_DIR/icons"
 ICON_NAME="spotdl-helper.icon"
-BIN_LINK="$BIN_DIR/spotdl-helper"
 DESKTOP_FILE="$DESKTOP_DIR/spotdl-helper.desktop"
 LAUNCHER_SOURCE="$INSTALL_DIR/launcher.sh"
 
 printf "${BOLD}${CYAN}Installing SpotDL Helper...${RESET}\n"
 
 # Create destination directories
-mkdir -p "$INSTALL_DIR" "$BIN_DIR" "$DESKTOP_DIR" "$ICON_DIR"
+mkdir -p "$INSTALL_DIR" "$DESKTOP_DIR" "$ICON_DIR"
 
 # Copy all files
 cp -r "$SRC_DIR/"* "$INSTALL_DIR/"
@@ -52,9 +50,6 @@ for file in "$INSTALL_DIR"/spotdl-*; do
     fi
 done
 
-# Create symbolic link
-ln -sf "$LAUNCHER_SOURCE" "$BIN_LINK"
-
 # Create .desktop shortcut
 cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
@@ -62,7 +57,7 @@ Version=1.0
 Type=Application
 Name=SpotDL Helper
 Comment=Download your music with SpotDL
-Exec=$BIN_LINK
+Exec=$LAUNCHER_SOURCE
 Icon=$ICON_DIR/$ICON_NAME
 Terminal=true
 Categories=Audio;Utility;
@@ -75,13 +70,3 @@ printf "\n${BOLD}${GREEN}Installation completed successfully!${RESET}\n"
 printf "${CYAN}Application files:${RESET}        %s\n" "$INSTALL_DIR"
 printf "${CYAN}Desktop shortcut created:${RESET} %s\n" "$DESKTOP_FILE"
 printf "${CYAN}Icon referenced:${RESET}          %s/%s\n" "$ICON_DIR" "$ICON_NAME"
-printf "${CYAN}Executable from terminal:${RESET} ${BOLD}spotdl-helper${RESET}\n"
-
-# Check PATH
-if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
-    printf "\n${YELLOW}Warning:${RESET} Directory '%s' is not in your PATH.\n" "$BIN_DIR"
-    printf "Add it to your ~/.bashrc or ~/.zshrc:\n"
-    printf "  ${BOLD}export PATH=\"\$HOME/.local/bin:\$PATH\"${RESET}\n"
-fi
-
-exit 0
