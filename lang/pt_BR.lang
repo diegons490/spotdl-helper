@@ -44,7 +44,6 @@ declare -gA LANG_MSGS=(
     [invalid_artist_link]="Erro: Isso não é um link de artista do Spotify!"
     [invalid_sync_link]="Erro: Link inválido para sincronização!"
     [invalid_link_type]="Tipo de link inválido para esta opção!"
-    [editor_not_found]="Editor não encontrado"
     [editor_not_found_fmt]="Editor '%s' não encontrado."
     [error_downloading_playlist]="Erro no download da playlist: %s"
     [error_downloading_version]="Falha ao baixar a versão"
@@ -55,6 +54,9 @@ declare -gA LANG_MSGS=(
     [download_failed]="Falha no download do spotDL."
     [permission_error]="Erro de permissão ao tornar o arquivo executável."
     [version_check_failed]="Download concluído, mas não foi possível verificar a versão."
+    [missing_dependencies_header]="DEPENDÊNCIAS NECESSÁRIAS"
+    [ffmpeg_manual_install]="Visite https://ffmpeg.org/download.html para instruções de instalação"
+    [jq_manual_install]="Visite https://stedolan.github.io/jq/download/ para instruções de instalação"
 
     # ------------------------
     # Mensagens Informativas
@@ -128,6 +130,16 @@ declare -gA LANG_MSGS=(
     [current_value]="Valor atual:"
     [press_0_to_return]="Ou 0 para voltar ao menu principal"
     [invalid_link]="Por favor, insira um link válido ou 0 para voltar"
+    [config_kept_suffix]="mantido"
+    [generate_lrc]="Gerar letras (arquivo .lrc)?"
+    [skip_album_art]="Pular capa do álbum?"
+    [sync_without_deleting]="Sincronizar sem excluir músicas não encontradas na playlist?"
+    [sync_remove_lrc]="Remover arquivos .lrc durante a sincronização?"
+    [opening_config]="Abrindo arquivo no editor:"
+    [try_again_later]="Tente novamente mais tarde ou verifique sua conexão com a internet."
+    [check_connection_or_permissions]="Verifique sua conexão de internet ou permissões de escrita."
+    [bitrate]="Bitrate (kbps) (valores válidos: %s)"
+    [format]="Formato de áudio (valores válidos: %s)"
 
     # ------------------------
     # Mensagens Técnicas / Debug

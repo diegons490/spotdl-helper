@@ -44,7 +44,6 @@ declare -gA LANG_MSGS=(
     [invalid_artist_link]="Error: ¡Este no es un enlace de artista de Spotify!"
     [invalid_sync_link]="Error: ¡Enlace inválido para sincronización!"
     [invalid_link_type]="¡Tipo de enlace inválido para esta opción!"
-    [editor_not_found]="Editor no encontrado"
     [editor_not_found_fmt]="Editor '%s' no encontrado."
     [error_downloading_playlist]="Error descargando la lista: %s"
     [error_downloading_version]="Error al descargar la versión"
@@ -55,6 +54,9 @@ declare -gA LANG_MSGS=(
     [download_failed]="Descarga de spotDL fallida."
     [permission_error]="Error de permisos al hacer el archivo ejecutable."
     [version_check_failed]="Descarga completada pero falló la verificación de versión."
+    [missing_dependencies_header]="DEPENDENCIAS REQUERIDAS"
+    [ffmpeg_manual_install]="Visite https://ffmpeg.org/download.html para instrucciones de instalación"
+    [jq_manual_install]="Visite https://stedolan.github.io/jq/download/ para instrucciones de instalación"
 
     # ------------------------
     # Mensajes Informativos
@@ -128,6 +130,16 @@ declare -gA LANG_MSGS=(
     [current_value]="Valor actual:"
     [press_0_to_return]="O 0 para volver al menú principal"
     [invalid_link]="Por favor, ingrese un enlace válido o 0 para volver"
+    [config_kept_suffix]="mantenido"
+    [generate_lrc]="¿Generar letras (archivo .lrc)?"
+    [skip_album_art]="¿Omitir portada del álbum?"
+    [sync_without_deleting]="¿Sincronizar sin eliminar canciones no encontradas en la lista?"
+    [sync_remove_lrc]="¿Eliminar archivos .lrc durante la sincronización?"
+    [opening_config]="Abriendo archivo en editor:"
+    [try_again_later]="Intente nuevamente más tarde o verifique su conexión a internet."
+    [check_connection_or_permissions]="Verifique su conexión a internet o permisos de escritura."
+    [bitrate]="Bitrate (kbps) (valores válidos: %s)"
+    [format]="Formato de audio (valores válidos: %s)"
 
     # ------------------------
     # Mensajes Técnicos/Debug

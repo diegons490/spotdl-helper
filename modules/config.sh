@@ -15,7 +15,7 @@ declare -A editable_config=(
 )
 
 # Variáveis globais para configurações do helper
-CURRENT_LANG="pt_BR"
+CURRENT_LANG="en_US"
 FINAL_DIR="$DOWNLOADS_DIR/SpotDL"
 MAX_BACKUPS=5
 
@@ -28,7 +28,7 @@ load_helper_config() {
     fi
     
     # Valores padrão se não encontrados
-    [[ -z "$CURRENT_LANG" ]] && CURRENT_LANG="pt_BR"
+    [[ -z "$CURRENT_LANG" ]] && CURRENT_LANG="en_US"
     [[ -z "$FINAL_DIR" ]] && FINAL_DIR="$DOWNLOADS_DIR/SpotDL"
     [[ -z "$MAX_BACKUPS" ]] && MAX_BACKUPS=5
     

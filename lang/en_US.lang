@@ -44,7 +44,6 @@ declare -gA LANG_MSGS=(
     [invalid_artist_link]="Error: This is not a Spotify artist link!"
     [invalid_sync_link]="Error: Invalid link for sync!"
     [invalid_link_type]="Invalid link type for this option!"
-    [editor_not_found]="Editor not found"
     [editor_not_found_fmt]="Editor '%s' not found."
     [error_downloading_playlist]="Error downloading playlist: %s"
     [error_downloading_version]="Failed to download version"
@@ -55,6 +54,10 @@ declare -gA LANG_MSGS=(
     [download_failed]="spotDL download failed."
     [permission_error]="Permission error making file executable."
     [version_check_failed]="Download completed but version check failed."
+    [bitrate]="Bitrate (kbps) (valid values: %s)"
+    [missing_dependencies_header]="REQUIRED DEPENDENCIES"
+    [ffmpeg_manual_install]="Visit https://ffmpeg.org/download.html for installation instructions"
+    [jq_manual_install]="Visit https://stedolan.github.io/jq/download/ for installation instructions"
 
     # ------------------------
     # Informational Messages
@@ -128,6 +131,15 @@ declare -gA LANG_MSGS=(
     [current_value]="Current value:"
     [press_0_to_return]="Or 0 to return to main menu"
     [invalid_link]="Please enter a valid link or 0 to return"
+    [config_kept_suffix]="kept"
+    [generate_lrc]="Generate lyrics (.lrc file)?"
+    [skip_album_art]="Skip album art?"
+    [sync_without_deleting]="Sync without deleting songs not found in the playlist?"
+    [sync_remove_lrc]="Remove .lrc files during sync?"
+    [opening_config]="Opening file in editor:"
+    [try_again_later]="Please try again later or check your internet connection."
+    [check_connection_or_permissions]="Check your internet connection or write permissions."
+    [format]="Audio format (valid values: %s)"
 
     # ------------------------
     # Technical/Debug Messages
