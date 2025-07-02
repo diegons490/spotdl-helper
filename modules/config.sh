@@ -172,7 +172,6 @@ edit_config_interactively() {
     while true; do
         clear
         print_section_header "$(get_msg menu_option5)"
-
         printf "\n${BLUE}$(printf "$(get_msg info_current_config)" "${YELLOW}${BOLD}[x]${RESET}${BLUE}")${RESET}\n"
 
         # Seleção de idioma
@@ -222,6 +221,8 @@ edit_config_interactively() {
 
     # Caminho de download
     print_section_header "$(get_msg menu_option5)"
+    printf "\n${BLUE}$(printf "$(get_msg info_current_config)" "${YELLOW}${BOLD}[x]${RESET}${BLUE}")${RESET}\n"
+    
     printf "\n${BOLD}%s ${YELLOW}[%s]${RESET}: " "$(get_msg base_download_path)" "$FINAL_DIR"
     read -r input
     if [[ -n "$input" ]]; then
@@ -229,12 +230,49 @@ edit_config_interactively() {
         printf "\n${GREEN}$(printf "$(get_msg download_path_updated)" "$input")${RESET}\n"
         printf "\n${YELLOW}%s${RESET}" "$(get_msg press_enter_continue)"
         read -r
+        clear
     else
         printf "\n${YELLOW}$(printf "$(get_msg config_kept_path)" "$FINAL_DIR")${RESET}\n"
         printf "\n${YELLOW}%s${RESET}" "$(get_msg press_enter_continue)"
         read -r
         clear
     fi
+
+    # Número de threads (downloads simultâneos)
+    while true; do
+        print_section_header "$(get_msg menu_option5)"
+        printf "\n${BLUE}$(printf "$(get_msg info_current_config)" "${YELLOW}${BOLD}[x]${RESET}${BLUE}")${RESET}\n"
+
+        printf "\n${RED}%s${RESET}\n" "$(get_msg threads_warning)"  # Mensagem de aviso
+        printf "\n${BOLD}%s${YELLOW}[%s]${RESET}${BOLD}:${RESET} " \
+               "$(get_msg label_threads)" "${editable_config[threads]}"
+        read -r new_threads
+        
+        if [[ -z "$new_threads" ]]; then
+            printf "\n${YELLOW}$(printf "$(get_msg config_kept_threads)" "${editable_config[threads]}")${RESET}\n"
+            printf "\n${YELLOW}%s${RESET}" "$(get_msg press_enter_continue)"
+            read -r
+            clear
+            break
+        fi
+        
+        if [[ "$new_threads" =~ ^[1-9][0-9]*$ ]]; then
+            if (( new_threads > 5 )); then
+                printf "\n${YELLOW}%s${RESET}\n" "$(get_msg threads_high_warning)"
+                sleep 2
+            fi
+            editable_config[threads]="$new_threads"
+            printf "\n${GREEN}$(printf "$(get_msg threads_updated)" "${new_threads}")${RESET}\n"
+            printf "\n${YELLOW}%s${RESET}" "$(get_msg press_enter_continue)"
+            read -r
+            clear
+            break
+        else
+            printf "\n${RED}%s${RESET}\n" "$(get_msg invalid_number_threads)"
+            sleep 1.5
+            clear
+        fi
+    done
 
     # Função auxiliar para opções enumeradas
     handle_enumerated_option() {
@@ -251,6 +289,8 @@ edit_config_interactively() {
         # Exibir prompt e opções
         {   
             print_section_header "$(get_msg menu_option5)"
+            printf "\n${BLUE}$(printf "$(get_msg info_current_config)" "${YELLOW}${BOLD}[x]${RESET}${BLUE}")${RESET}\n"
+
             printf "\n${BOLD}%s${RESET}\n" "$(printf "$prompt_msg" "${valid_options[*]}")"
             printf "${YELLOW}%s [%s]${RESET}\n\n" "$(get_msg current_value)" "$current_value"
             
@@ -329,6 +369,8 @@ edit_config_interactively() {
     # Número máximo de backups
     while true; do
         print_section_header "$(get_msg menu_option5)"
+        printf "\n${BLUE}$(printf "$(get_msg info_current_config)" "${YELLOW}${BOLD}[x]${RESET}${BLUE}")${RESET}\n"
+
         printf "\n${BOLD}$(get_msg max_backups)${YELLOW}[${MAX_BACKUPS}]${RESET}${BOLD}:${RESET} "
         read -r new_max_backups
         
@@ -370,6 +412,8 @@ edit_config_interactively() {
         
         # Exibir prompt
         print_section_header "$(get_msg menu_option5)"
+        printf "\n${BLUE}$(printf "$(get_msg info_current_config)" "${YELLOW}${BOLD}[x]${RESET}${BLUE}")${RESET}\n"
+
         printf "\n${BOLD}%s ${YELLOW}[%s]${RESET}? (%s/%s): " \
                "$prompt_msg" "$display_value" "$yes_char" "$no_char"
 
@@ -421,6 +465,14 @@ edit_config_interactively() {
     # Recarregar configurações e strings
     reload_application_config
     
+}
+
+reload_application_config() {
+
+    # Recarregar configurações principais
+    load_helper_config
+    load_spotdl_config
+
     # Mensagem de sucesso
     printf "\n${CYAN}%s${RESET}\n" "$(get_msg loaded_config)"
     sleep 0.5
@@ -430,12 +482,6 @@ edit_config_interactively() {
     sleep 0.5
     printf "\n${YELLOW}%s${RESET}" "$(get_msg press_enter_continue)"
     read -r
-}
-
-reload_application_config() {
-    # Recarregar configurações principais
-    load_helper_config
-    load_spotdl_config
     
     # Recarregar strings de UI
     load_ui_strings "$CURRENT_LANG"
@@ -448,13 +494,19 @@ reload_application_config() {
     SYNC_WITHOUT_DELETING=$(jq -r '.sync_without_deleting // "true"' "$SPOTDL_CONFIG")
 }
 
-# Visualizar arquivo de configuração do spotDL
-view_current_config() {
-    clear
-    print_section_header "$(get_msg menu_option5)"
+# Caminhos fixos para os arquivos de configuração manual
+SPOTDL_CONFIG_MANUAL="$HOME/.spotdl/config.json"
+HELPER_CONFIG_MANUAL="$HOME/.spotdl-helper/helper-config.json"
 
-    printf "\n${BLUE}%s${RESET}\n" "$(get_msg opening_config)"
-    printf "${YELLOW}%s${RESET}\n\n" "$SPOTDL_CONFIG"
+open_manual_config() {
+    local config_path="$1"
+    local backup_file="/tmp/backup_$(basename "$config_path")_$(date +%s).json"
+
+    cp "$config_path" "$backup_file"
+
+    clear
+    print_section_header "$(get_msg opening_config)"
+    printf "${YELLOW}%s${RESET}\n\n" "$config_path"
 
     while true; do
         printf "\n${BOLD}%s${RESET}\n" "$(get_msg inform_editor)"
@@ -464,10 +516,40 @@ view_current_config() {
 
         if command -v "$editor" &>/dev/null; then
             sleep 0.5
-            "$editor" "$SPOTDL_CONFIG"
+            "$editor" "$config_path"
             break
         else
             printf "\n${RED}$(printf "$(get_msg editor_not_found_fmt)" "$editor")${RESET}\n"
         fi
     done
+
+    clear
+    printf "\n${CYAN}%s${RESET}\n\n" "$(get_msg config_after_edit)"
+
+    # Gerar diff filtrado sem cabeçalhos
+    local diff_output
+    diff_output=$(diff -u "$backup_file" "$config_path" | grep -vE '^(---|\+\+\+|@@)')
+
+    if [[ -n "$diff_output" ]]; then
+        # Colorir diff: linhas que começam com "-" vermelho, "+" verde, resto normal
+        echo "$diff_output" | while IFS= read -r line; do
+            if [[ $line == -* ]]; then
+                printf "\e[31m%s\e[0m\n" "$line"  # vermelho
+            elif [[ $line == +* ]]; then
+                printf "\e[32m%s\e[0m\n" "$line"  # verde
+            else
+                printf "%s\n" "$line"              # normal
+            fi
+        done
+    else
+        printf "\n${YELLOW}%s${RESET}\n" "$(get_msg no_changes_detected)"
+    fi
+
+    printf "\n${YELLOW}%s${RESET}" "$(get_msg press_enter_continue)"
+    read -r
+
+    rm -f "$backup_file"
+    clear
+    reload_application_config
 }
+

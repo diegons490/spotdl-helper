@@ -24,12 +24,12 @@ disable_set_e() {
     return $status
 }
 
-# Imprime um cabeçalho formatado
-print_header() {
+# Função auxiliar para mostrar cabeçalhos de seção
+print_section_header() {
     local title="$1"
     printf "\n${CYAN}===========================================${RESET}\n"
-    printf "${BOLD}${CYAN}%s${RESET}\n" "$title"
-    printf "${CYAN}===========================================${RESET}\n"
+    printf "${BOLD}${CYAN} %-40s${RESET}\n" "$title"
+    printf "${CYAN}===========================================${RESET}\n\n"
 }
 
 # Adicione esta função no final do arquivo
@@ -93,3 +93,4 @@ ask_to_edit() {
         esac
     done
 }
+

@@ -84,7 +84,6 @@ declare -gA LANG_MSGS=(
     [sync_without_deleting]="¿Sincronizar sin eliminar canciones no encontradas en la lista?"
     [sync_remove_lrc]="¿Eliminar archivos .lrc durante la sincronización?"
     [base_download_path]="Ruta base de descargas"
-    [opening_config]="Abriendo archivo en editor:"
     [inform_editor]="Ingrese el editor de texto para abrir el archivo (ej: mousepad)."
     [press_enter_nano]="Presione Enter para abrir usando nano:"
     [try_again]="Por favor, intente nuevamente."
@@ -219,4 +218,31 @@ declare -gA LANG_MSGS=(
     [check_connection_or_permissions]="Verifique su conexión a internet o permisos de escritura."
     [permission_error]="Error de permisos al hacer el archivo ejecutable."
     [version_check_failed]="Descarga completada pero falló la verificación de versión."
+
+    [threads_warning]="ADVERTENCIA: ¡Los valores altos pueden causar inestabilidad!"
+    [label_threads]="Número de descargas simultáneas (threads)"
+    [config_kept_threads]="Configuración de threads mantenida en: %s"
+    [threads_updated]="Número de descargas simultáneas actualizado a: %s"
+    [invalid_number_threads]="Por favor ingrese un número entero positivo."
+    [threads_high_warning]="ADVERTENCIA: ¡Los valores superiores a 5 pueden ser inestables!"
+    
+    [config_interactive]="Configuración interactiva"
+    [config_manual]="Configuración manual"
+    [config_open_spotdl]="Abrir configuración de SpotDL"
+    [config_open_helper]="Abrir configuración del SpotDL Helper"
+
+    # Configuración manual
+    [menu_settings_manual]="Configuración manual"
+    [menu_settings_interactive]="Configuración interactiva"
+    [menu_manual_spotdl]="Abrir configuración de SpotDL"
+    [menu_manual_helper]="Abrir configuración de SpotDL Helper"
+    [editor_not_found_fmt]="Editor '%s' no encontrado."
+    [opening_config]="Abriendo archivo de configuración..."
+    [debug_manual_config_changes]="Cambios manuales realizados:"
+
+    [config_after_edit]="Cambios guardados. Archivo actualizado:"
+    [no_changes_detected]="Nenhuma alteração detectada."
+    [config_saving]="Salvando configurações e saindo..."
+    [config_saved_exit]="Configurações salvas. Encerrando edição."
+
 )

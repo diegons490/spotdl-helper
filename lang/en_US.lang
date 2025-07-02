@@ -84,8 +84,6 @@ declare -gA LANG_MSGS=(
     [sync_without_deleting]="Sync without deleting songs not found in the playlist?"
     [sync_remove_lrc]="Remove .lrc files during sync?"
     [base_download_path]="Base download path"
-    [opening_config]="Opening file in editor:"
-    [inform_editor]="Enter the text editor to open the file (e.g., mousepad)."
     [press_enter_nano]="Press Enter to open using nano:"
     [try_again]="Please try again."
     [redirect_playlist]="This is a playlist. Do you want to use special mode for playlists?"
@@ -219,4 +217,33 @@ declare -gA LANG_MSGS=(
     [check_connection_or_permissions]="Check your internet connection or write permissions."
     [permission_error]="Permission error making file executable."
     [version_check_failed]="Download completed but version check failed."
+
+    [threads_warning]="WARNING: High values may cause instability!"
+    [label_threads]="Number of simultaneous downloads (threads)"
+    [config_kept_threads]="Threads setting kept at: %s"
+    [threads_updated]="Number of simultaneous downloads updated to: %s"
+    [invalid_number_threads]="Please enter a positive integer."
+    [threads_high_warning]="WARNING: Values above 5 may be unstable!"
+    
+    [config_interactive]="Interactive Configuration"
+    [config_manual]="Manual Configuration"
+    [config_open_spotdl]="Open SpotDL Configuration"
+    [config_open_helper]="Open SpotDL Helper Configuration"
+
+    # Manual settings
+    [menu_settings_manual]="Manual configuration"
+    [menu_settings_interactive]="Interactive configuration"
+    [menu_manual_spotdl]="Open SpotDL Configuration"
+    [menu_manual_helper]="Open SpotDL Helper Configuration"
+    [editor_not_found_fmt]="Editor '%s' not found."
+    [inform_editor]="Enter the text editor (or press Enter to use 'nano'):"
+    [opening_config]="Opening configuration file..."
+    [debug_manual_config_changes]="Manual changes applied:"
+
+    [config_after_edit]="Changes saved. Updated file:"
+    [no_changes_detected]="Nenhuma alteração detectada."
+    [config_saving]="Salvando configurações e saindo..."
+    [config_saved_exit]="Configurações salvas. Encerrando edição."
+
+
 )
