@@ -140,6 +140,8 @@ declare -gA LANG_MSGS=(
     [try_again_later]="Please try again later or check your internet connection."
     [check_connection_or_permissions]="Check your internet connection or write permissions."
     [format]="Audio format (valid values: %s)"
+    [no_cache]="Disable spotDL cache?"
+    [no_cache_description]="Disabling cache may resolve download warnings (recommended if experiencing issues)"
 
     # ------------------------
     # Technical/Debug Messages

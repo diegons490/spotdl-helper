@@ -52,6 +52,11 @@ run_spotdl() {
         base_args+=("--generate-lrc")
     fi
     
+    # Adiciona --no-cache se configurado
+    if [[ "${editable_config[no_cache]}" == "true" ]]; then
+        base_args+=("--no-cache")
+    fi
+    
     # Adiciona argumentos extras
     local all_args=("${base_args[@]}" "${extra_args[@]}")
     
@@ -63,6 +68,9 @@ run_spotdl() {
     for ((i=0; i<${#all_args[@]}; i+=2)); do
         if [[ $i -lt ${#all_args[@]} && $((i+1)) -lt ${#all_args[@]} ]]; then
             printf " ${BOLD}${all_args[i]}${RESET} ${GREEN}${all_args[i+1]}${RESET}"
+        elif [[ $i -lt ${#all_args[@]} ]]; then
+            # Caso especial para --no-cache que não tem valor
+            printf " ${BOLD}${all_args[i]}${RESET}"
         fi
     done
     printf "\n\n"

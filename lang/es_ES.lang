@@ -140,6 +140,8 @@ declare -gA LANG_MSGS=(
     [check_connection_or_permissions]="Verifique su conexión a internet o permisos de escritura."
     [bitrate]="Bitrate (kbps) (valores válidos: %s)"
     [format]="Formato de audio (valores válidos: %s)"
+    [no_cache]="¿Desactivar caché de spotDL?"
+    [no_cache_description]="Desactivar el caché puede resolver advertencias durante las descargas (recomendado si experimenta problemas)"
 
     # ------------------------
     # Mensajes Técnicos/Debug

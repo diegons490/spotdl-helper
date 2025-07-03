@@ -11,7 +11,8 @@ declare -A editable_config=(
     [threads]="3"
     [sync_without_deleting]="false"
     [sync_remove_lrc]="false"
-    [overwrite]="skip"  # Nova opção
+    [overwrite]="skip"
+    [no_cache]="false"
 )
 
 # Variáveis globais para configurações do helper
@@ -80,7 +81,7 @@ save_spotdl_config() {
     "auth_token": null,
     "user_auth": false,
     "headless": false,
-    "no_cache": false,
+    "no_cache": ${editable_config[no_cache]},
     "max_retries": 3,
     "use_cache_file": false,
     "audio_providers": ["youtube-music"],
@@ -243,7 +244,7 @@ edit_config_interactively() {
         print_section_header "$(get_msg menu_option5)"
         printf "\n${BLUE}$(printf "$(get_msg info_current_config)" "${YELLOW}${BOLD}[x]${RESET}${BLUE}")${RESET}\n"
 
-        printf "\n${RED}%s${RESET}\n" "$(get_msg threads_warning)"  # Mensagem de aviso
+        printf "\n${YELLOW}%s${RESET}\n" "$(get_msg threads_warning)"  # Mensagem de aviso
         printf "\n${BOLD}%s${YELLOW}[%s]${RESET}${BOLD}:${RESET} " \
                "$(get_msg label_threads)" "${editable_config[threads]}"
         read -r new_threads
@@ -414,6 +415,11 @@ edit_config_interactively() {
         print_section_header "$(get_msg menu_option5)"
         printf "\n${BLUE}$(printf "$(get_msg info_current_config)" "${YELLOW}${BOLD}[x]${RESET}${BLUE}")${RESET}\n"
 
+        # Adicionando a mensagem descritiva específica para no_cache
+        if [[ "$config_key" == "no_cache" ]]; then
+            printf "\n${YELLOW}%s${RESET}\n" "$(get_msg no_cache_description)"
+        fi
+
         printf "\n${BOLD}%s ${YELLOW}[%s]${RESET}? (%s/%s): " \
                "$prompt_msg" "$display_value" "$yes_char" "$no_char"
 
@@ -458,6 +464,7 @@ edit_config_interactively() {
     handle_boolean_option "skip_album_art" "$(get_msg skip_album_art)"
     handle_boolean_option "sync_without_deleting" "$(get_msg sync_without_deleting)"
     handle_boolean_option "sync_remove_lrc" "$(get_msg sync_remove_lrc)"
+    handle_boolean_option "no_cache" "$(get_msg no_cache)"
     clear
     save_spotdl_config
     save_helper_config
@@ -492,6 +499,7 @@ reload_application_config() {
     THREADS=$(jq -r '.threads // 3' "$SPOTDL_CONFIG")
     GENERATE_LRC=$(jq -r '.generate_lrc // "true"' "$SPOTDL_CONFIG")
     SYNC_WITHOUT_DELETING=$(jq -r '.sync_without_deleting // "true"' "$SPOTDL_CONFIG")
+    NO_CACHE=$(jq -r '.no_cache // "false"' "$SPOTDL_CONFIG")
 }
 
 # Caminhos fixos para os arquivos de configuração manual
