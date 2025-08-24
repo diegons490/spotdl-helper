@@ -2,19 +2,58 @@
 # modules/downloads.sh
 # Sistema de downloads completo e configurável - REFATORADO
 
-source "$(dirname "${BASH_SOURCE[0]}")/config.sh"
-load_config
-
 # Carrega configurações essenciais
-OUTPUT_TEMPLATE=$(jq -r '.output' "$SPOTDL_CONFIG")
-OVERWRITE_MODE=$(jq -r '.overwrite // "skip"' "$SPOTDL_CONFIG")
-THREADS=$(jq -r '.threads // 3' "$SPOTDL_CONFIG")
-GENERATE_LRC=$(jq -r '.generate_lrc // "true"' "$SPOTDL_CONFIG")
-SYNC_WITHOUT_DELETING=$(jq -r '.sync_without_deleting // "true"' "$SPOTDL_CONFIG")
+OUTPUT_TEMPLATE=$(jq -r '.output' "$SPOTDL_CONFIG_PATH")
+OVERWRITE_MODE=$(jq -r '.overwrite // "skip"' "$SPOTDL_CONFIG_PATH")
+THREADS=$(jq -r '.threads // 3' "$SPOTDL_CONFIG_PATH")
+GENERATE_LRC=$(jq -r '.generate_lrc // "true"' "$SPOTDL_CONFIG_PATH")
+SYNC_WITHOUT_DELETING=$(jq -r '.sync_without_deleting // "true"' "$SPOTDL_CONFIG_PATH")
 
-# ========== FUNÇÕES AUXILIARES ==========
+# Função para recarregar configurações em tempo real
+reload_download_config() {
+    # Recarregar configurações do spotDL
+    if [[ -f "$SPOTDL_CONFIG_PATH" ]]; then
+        # Atualizar variáveis do spotDL
+        OUTPUT_TEMPLATE=$(jq -r '.output' "$SPOTDL_CONFIG_PATH")
+        OVERWRITE_MODE=$(jq -r '.overwrite // "skip"' "$SPOTDL_CONFIG_PATH")
+        THREADS=$(jq -r '.threads // 3' "$SPOTDL_CONFIG_PATH")
+        GENERATE_LRC=$(jq -r '.generate_lrc // "true"' "$SPOTDL_CONFIG_PATH")
+        SYNC_WITHOUT_DELETING=$(jq -r '.sync_without_deleting // "true"' "$SPOTDL_CONFIG_PATH")
+        
+        # Atualizar configurações editáveis
+        for key in "${!EDITABLE_CONFIG[@]}"; do
+            local value
+            value=$(jq -r --arg k "$key" '.[$k] // empty' "$SPOTDL_CONFIG_PATH" 2>/dev/null)
+            if [[ -n "$value" && "$value" != "null" ]]; then
+                EDITABLE_CONFIG["$key"]="$value"
+            fi
+        done
+        
+        # Recarregar estrutura de diretórios
+        local full_template
+        full_template=$(jq -r '.output // empty' "$SPOTDL_CONFIG_PATH")
+        if [[ -n "$full_template" && "$full_template" != "null" ]]; then
+            FINAL_DIR="${full_template%%\{*}"
+            FINAL_DIR="${FINAL_DIR%/}"
+            OUTPUT_STRUCTURE="${full_template#${FINAL_DIR}/}"
+        fi
+    fi
+    
+    # Recarregar configurações do helper
+    if [[ -f "$HELPER_CONFIG_PATH" ]]; then
+        MAX_BACKUPS=$(jq -r '.max_backups // 5' "$HELPER_CONFIG_PATH")
+    fi
+    
+    # Recarregar provedores de letras
+    CURRENT_LYRIC_PROVIDERS=()
+    if [[ -f "$SPOTDL_CONFIG_PATH" ]]; then
+        while IFS= read -r provider; do
+            [[ -n "$provider" && "$provider" != "null" ]] && CURRENT_LYRIC_PROVIDERS+=("$provider")
+        done < <(jq -r '.lyrics_providers[]?' "$SPOTDL_CONFIG_PATH" 2>/dev/null)
+    fi
+}
 
-# Funções de validação de links
+# Validações de links
 is_valid_track_link() {
     [[ "$1" =~ open.spotify.com/track/ ]]
 }
@@ -31,118 +70,109 @@ is_valid_artist_link() {
     [[ "$1" =~ open.spotify.com/artist/ ]]
 }
 
-# Função para executar spotdl com configurações
+# Executa spotdl com configurações
 run_spotdl() {
+    # Recarregar configurações antes de executar
+    reload_download_config
+    
     local command="$1"
     local link="$2"
     shift 2
     local extra_args=("$@")
     
-    # Argumentos base
     local base_args=(
-        "--format" "${editable_config[format]}"
-        "--bitrate" "${editable_config[bitrate]}"
+        "--format" "${EDITABLE_CONFIG[format]}"
+        "--bitrate" "${EDITABLE_CONFIG[bitrate]}"
         "--output" "$OUTPUT_TEMPLATE"
         "--overwrite" "$OVERWRITE_MODE"
         "--threads" "$THREADS"
     )
     
-    # Adiciona gerar letras se configurado
-    if [[ "$GENERATE_LRC" == "true" ]]; then
-        base_args+=("--generate-lrc")
+    [[ "$GENERATE_LRC" == "true" ]] && base_args+=(--generate-lrc)
+    [[ "${EDITABLE_CONFIG[no_cache]}" == "true" ]] && base_args+=(--no-cache)
+
+    # Adicionar provedores de letras se configurado
+    if [ ${#CURRENT_LYRIC_PROVIDERS[@]} -gt 0 ]; then
+        base_args+=(--lyrics)
+        for provider in "${CURRENT_LYRIC_PROVIDERS[@]}"; do
+            base_args+=("$provider")
+        done
     fi
-    
-    # Adiciona --no-cache se configurado
-    if [[ "${editable_config[no_cache]}" == "true" ]]; then
-        base_args+=("--no-cache")
-    fi
-    
-    # Adiciona argumentos extras
-    local all_args=("${base_args[@]}" "${extra_args[@]}")
-    
-    # Formata a mensagem de log com cores
-    printf "\n${BLUE}${BOLD}%s${RESET}\n" "$(get_msg executing_label)"
-    printf "${BLUE}spotdl ${BOLD}$command ${YELLOW}\"$link\"${RESET}"
-    
-    # Formata cada argumento
-    for ((i=0; i<${#all_args[@]}; i+=2)); do
-        if [[ $i -lt ${#all_args[@]} && $((i+1)) -lt ${#all_args[@]} ]]; then
-            printf " ${BOLD}${all_args[i]}${RESET} ${GREEN}${all_args[i+1]}${RESET}"
-        elif [[ $i -lt ${#all_args[@]} ]]; then
-            # Caso especial para --no-cache que não tem valor
-            printf " ${BOLD}${all_args[i]}${RESET}"
-        fi
+
+    # Monta a linha de comando para exibição
+    local cmd_line="spotdl $command \"$link\""
+    for arg in "${base_args[@]}" "${extra_args[@]}"; do
+        cmd_line+=" \"$arg\""
     done
-    printf "\n\n"
     
-    # Executa o comando
-    "$SPOTDL_CMD" "$command" "$link" "${all_args[@]}"
+    fmt_cmd "$cmd_line"
+    newline
+    
+    # Executa o comando com a ordem correta: comando, link, argumentos
+    "$SPOTDL_CMD" "$command" "$link" "${base_args[@]}" "${extra_args[@]}"
 }
 
-# ========== FUNÇÕES PRINCIPAIS DE DOWNLOAD ==========
-
-# Função para baixar músicas ou álbuns
+# Baixar músicas ou álbuns
 download_music() {
     clear
-    print_section_header "$(get_msg menu_option1)"
+    reload_download_config
+    fmt_header "$(get_msg menu_option1)"
 
-    # Informa o caminho base
-    printf "\n${CYAN}%s:${RESET} ${GREEN}%s${RESET}\n\n" \
-        "$(get_msg label_download_path)" "$FINAL_DIR"
+    fmt_config_detail "$(get_msg label_download_path)" "$FINAL_DIR"
+    fmt_config_detail "$(get_msg config_output_template)" "$(get_template_display_name)"    
 
     local links=()
     local link
 
     while true; do
-        printf "\n${BOLD}%s${RESET}\n" "$(get_msg enter_link)"
-        printf "${CYAN}%s${RESET}\n" "$(get_msg press_0_to_return)"
+        fmt_prompt "\n$(get_msg enter_link)\n"
         read -r link
+        newline
         
         [[ "$link" == "0" ]] && return 0
         [[ -z "$link" ]] && continue
-        
-        # Validação para músicas/álbuns
+
         if ! is_valid_track_link "$link" && ! is_valid_album_link "$link"; then
-            printf "\n${RED}%s${RESET}\n" "$(get_msg invalid_link_type)"
-            printf "\n${YELLOW}%s${RESET}\n" "$(get_msg valid_link_types_tracks_albums)"
+            fmt_error "$(get_msg invalid_link_type)\n"
+            fmt_warning "$(get_msg valid_link_types_tracks_albums)"
             continue
         fi
         
         links+=("$link")
 
-        if ! prompt_yes_no "$(get_msg add_more_links)"; then
+        if ! prompt_yes_no_colored "$(get_msg add_more_links)"; then
             break
         fi
     done
 
-    printf "\n${GREEN}%s${RESET}\n\n" "$(get_msg starting_downloads)"
-
+    newline
+    fmt_success "$(get_msg starting_downloads)\n"
+    
     for link in "${links[@]}"; do
-        printf "${BLUE}%s:\n%s${RESET}\n" "$(get_msg downloading)" "$link"
+        fmt_info "$(get_msg downloading): $link"
+        newline
+        fmt_warning "$(get_msg executing_label)"
         run_spotdl "download" "$link"
     done
 
-    printf "\n${GREEN}%s${RESET}\n\n" "$(get_msg all_downloads_completed)"
-    printf "\n${YELLOW}%s${RESET}" "$(get_msg press_enter_continue)"
-    read -n 1 -r -s
+    fmt_success "$(get_msg all_downloads_completed)\n"
+    prompt_enter_continue
 }
 
-# Função para baixar playlists
+# Baixar playlists
 download_playlists() {
     clear
-    print_section_header "$(get_msg download_playlists)"
+    reload_download_config
+    fmt_header "$(get_msg menu_option2)"
 
-    # Informa o caminho base
-    printf "\n${CYAN}%s:${RESET} ${GREEN}%s${RESET}\n\n" \
-        "$(get_msg label_download_path)" "$FINAL_DIR"
-
+    fmt_config_detail "$(get_msg label_download_path)" "$FINAL_DIR"
+    fmt_config_detail "$(get_msg config_output_template)" "$(get_template_display_name)"
+    
     local links=()
     local link
 
-    # Função para extrair ID da playlist
     extract_playlist_id() {
-        local url="$1"
-        local clean_url="${url%%[?#]*}"
+        local url="${1%%[?#]*}"
         local patterns=(
             'open\.spotify\.com/playlist/([a-zA-Z0-9]+)'
             'spotify\.com/playlist/([a-zA-Z0-9]+)'
@@ -151,13 +181,13 @@ download_playlists() {
         )
 
         for pattern in "${patterns[@]}"; do
-            if [[ "$clean_url" =~ $pattern ]]; then
+            if [[ "$url" =~ $pattern ]]; then
                 echo "${BASH_REMATCH[1]}"
                 return 0
             fi
         done
 
-        local last_segment="${clean_url##*/}"
+        local last_segment="${url##*/}"
         if [[ "$last_segment" =~ ^[a-zA-Z0-9]{22}$ ]]; then
             echo "$last_segment"
             return 0
@@ -168,47 +198,47 @@ download_playlists() {
     }
 
     while true; do
-        printf "\n${BOLD}%s${RESET}\n" "$(get_msg enter_link)"
-        printf "${CYAN}%s${RESET}\n" "$(get_msg press_0_to_return)"
+        fmt_prompt "\n$(get_msg enter_link)\n"
         read -r link
-        
+        newline
+
         [[ "$link" == "0" ]] && return 0
         [[ -z "$link" ]] && continue
 
-        # Validação específica para playlists
         if ! is_valid_playlist_link "$link"; then
-            printf "${RED}%s${RESET}\n" "$(get_msg invalid_playlist_link)"
-            printf "${YELLOW}%s${RESET}\n" "$(get_msg valid_link_types_playlists)"
+            fmt_error "$(get_msg invalid_playlist_link)\n"
+            fmt_warning "$(get_msg valid_link_types_playlists)"
             continue
         fi
 
         local playlist_id
         playlist_id=$(extract_playlist_id "$link")
         if [[ "$playlist_id" == "invalid" ]]; then
-            printf "${RED}%s${RESET}\n" "$(get_msg invalid_playlist_link)"
-            printf "${YELLOW}%s${RESET}\n" "$(printf "$(get_msg received_url)" "$link")"
+            fmt_error "$(get_msg invalid_playlist_link)\n"
+            fmt_warning "$(printf "$(get_msg received_url)" "$link")"
             continue
         fi
 
         links+=("$link")
-        if ! prompt_yes_no "$(get_msg add_more_links)"; then
+        if ! prompt_yes_no_colored "$(get_msg add_more_links)"; then
             break
         fi
     done
 
-    # Diretórios fixos baseados na configuração
     local playlists_dir="$FINAL_DIR/Playlists/Sync_files"
     local m3u_dir="$FINAL_DIR/Playlists"
     mkdir -p "$playlists_dir" "$m3u_dir" || {
-        printf "${RED}%s${RESET}\n" "$(get_msg no_write_permission)"
+        fmt_error "$(get_msg no_write_permission)\n"
         return 1
     }
 
-    printf "\n${GREEN}%s${RESET}\n\n" "$(get_msg starting_downloads)"
+    newline
+    fmt_success "$(get_msg starting_downloads)"
+    newline
 
     for link in "${links[@]}"; do
-        printf "${BLUE}%s:\n%s${RESET}\n" "$(get_msg downloading)" "$link"
-        local playlist_id
+        fmt_info "$(get_msg downloading): $link"
+        newline
         playlist_id=$(extract_playlist_id "$link")
         [[ "$playlist_id" == "invalid" ]] && continue
 
@@ -216,41 +246,21 @@ download_playlists() {
         local temp_m3u_file="$m3u_dir/spotdl_temp_$playlist_id.m3u8"
         local final_m3u_file=""
 
-        # Constrói o comando spotdl
-        local spotdl_cmd=(
-            "$SPOTDL_CMD" sync "$link"
-            --save-file "$spotdl_file"
-            --output "$OUTPUT_TEMPLATE"
-            --overwrite metadata
-            --threads "$THREADS"
-            --m3u "spotdl_temp_$playlist_id.m3u8"
-        )
-        [[ "$GENERATE_LRC" == "true" ]] && spotdl_cmd+=(--generate-lrc)
-
-        # Formatação de debug com cores
-        printf "\n${BLUE}${BOLD}%s${RESET}\n" "$(get_msg executing_label)"
-        printf "${BLUE}%s ${BOLD}%s ${YELLOW}\"%s\"${RESET}" \
-            "${spotdl_cmd[0]}" "${spotdl_cmd[1]}" "${spotdl_cmd[2]}"
-        
-        for ((i=3; i<${#spotdl_cmd[@]}; i+=2)); do
-            if [[ $i -lt ${#spotdl_cmd[@]} && $((i+1)) -lt ${#spotdl_cmd[@]} ]]; then
-                printf " ${BOLD}${spotdl_cmd[i]}${RESET} ${GREEN}${spotdl_cmd[i+1]}${RESET}"
-            else
-                printf " ${BOLD}${spotdl_cmd[i]}${RESET}"
-            fi
-        done
-        printf "\n\n"
-
-        # Execução em subshell
         (
             local work_dir
             work_dir=$(mktemp -d)
             cd "$work_dir" || exit 1
 
-            printf "${YELLOW}%s${RESET}\n\n" "$(printf "$(get_msg starting_download_temp_dir)" "$work_dir")"
-            
-            if ! "${spotdl_cmd[@]}"; then
-                printf "${RED}%s${RESET}\n" "$(printf "$(get_msg error_downloading_playlist)" "$link")"
+            fmt_info "$(printf "$(get_msg starting_download_temp_dir)" "$work_dir")\n"
+            fmt_warning "$(get_msg executing_label)"
+
+            # Usando run_spotdl para executar o sync
+            if ! run_spotdl "sync" "$link" \
+                "--save-file" "$spotdl_file" \
+                "--overwrite" "metadata" \
+                "--m3u" "spotdl_temp_$playlist_id.m3u8"; then
+                
+                fmt_error "$(printf "$(get_msg error_downloading_playlist)" "$link")\n"
                 cd ..
                 rm -rf "$work_dir"
                 exit 1
@@ -258,16 +268,15 @@ download_playlists() {
 
             if [[ -f "spotdl_temp_$playlist_id.m3u8" ]]; then
                 mv "spotdl_temp_$playlist_id.m3u8" "$temp_m3u_file"
-                printf "${GREEN}%s${RESET}\n" "$(printf "$(get_msg temp_m3u_moved)" "$temp_m3u_file")"
+                fmt_success "$(printf "$(get_msg temp_m3u_moved)" "$temp_m3u_file")\n"
             else
-                printf "${YELLOW}%s${RESET}\n" "$(get_msg m3u_not_generated)"
+                fmt_warning "$(get_msg m3u_not_generated)\n"
             fi
 
             cd ..
             rm -rf "$work_dir"
         )
 
-        # Processamento pós-download
         if [[ -f "$temp_m3u_file" ]]; then
             local wait_time=0
             while [[ ! -s "$spotdl_file" && $wait_time -lt 10 ]]; do
@@ -278,12 +287,12 @@ download_playlists() {
             local playlist_name=""
             if [[ -f "$spotdl_file" && -s "$spotdl_file" ]]; then
                 playlist_name=$(jq -r '.songs[0].list_name // .list_name // empty' "$spotdl_file")
-                printf "${GREEN}%s${RESET}\n" "$(printf "$(get_msg playlist_name_extracted)" "${playlist_name:-N/A}")"
+                fmt_success "$(printf "$(get_msg playlist_name_extracted)" "${playlist_name:-N/A}")\n"
             fi
 
             if [[ -n "$playlist_name" && "$playlist_name" != "null" ]]; then
                 local playlist_name_safe
-                playlist_name_safe=$(echo "$playlist_name" | 
+                playlist_name_safe=$(echo "$playlist_name" |
                                     iconv -f utf-8 -t ascii//TRANSLIT//IGNORE |
                                     sed -e 's/[^a-zA-Z0-9 _-]/ /g' \
                                         -e 's/  */ /g' \
@@ -295,159 +304,142 @@ download_playlists() {
             fi
 
             if mv -f "$temp_m3u_file" "$final_m3u_file"; then
-                printf "\n${GREEN}%s ${CYAN}%s${RESET}\n" "$(get_msg playlist_saved_as)" "$final_m3u_file"
+                fmt_success "$(get_msg playlist_saved_as) $final_m3u_file"
             else
-                printf "\n${YELLOW}%s ${CYAN}%s${RESET}\n" "$(get_msg m3u_kept_as)" "$temp_m3u_file"
+                fmt_warning "$(get_msg m3u_kept_as) $temp_m3u_file"
             fi
         else
-            printf "\n${YELLOW}%s${RESET}\n" "$(printf "$(get_msg m3u_not_generated_for)" "$link")"
+            fmt_warning "$(printf "$(get_msg m3u_not_generated_for)" "$link")\n"
         fi
 
-        printf "\n${BLUE}%s${RESET}\n" "$(get_msg separator_line)"
+        fmt_separator
+        newline
     done
 
-    printf "\n${GREEN}%s${RESET}\n\n" "$(get_msg all_downloads_completed)"
-    printf "${YELLOW}%s${RESET}" "$(get_msg press_enter_continue)"
-    read -n 1 -r -s
+    fmt_success "$(get_msg all_downloads_completed)\n"
+    prompt_enter_continue
 }
 
-# Função para baixar álbuns de artistas
+# Baixar álbuns de artistas
 download_artist_albums() {
     clear
-    print_section_header "$(get_msg menu_option3)"
+    reload_download_config
+    fmt_header "$(get_msg menu_option3)"
 
-    # Informa o caminho base
-    printf "\n${CYAN}%s:${RESET} ${GREEN}%s${RESET}\n\n" \
-        "$(get_msg label_download_path)" "$FINAL_DIR"
+    fmt_config_detail "$(get_msg label_download_path)" "$FINAL_DIR"
+    fmt_config_detail "$(get_msg config_output_template)" "$(get_template_display_name)"
+    newline
 
     local links=()
     local link
 
     while true; do
-        printf "\n${BOLD}%s${RESET}\n" "$(get_msg enter_link)"
-        printf "${CYAN}%s${RESET}\n" "$(get_msg press_0_to_return)"
+        fmt_prompt "$(get_msg enter_link)\n"
         read -r link
-        
+        newline
+
         [[ "$link" == "0" ]] && return 0
         [[ -z "$link" ]] && continue
-        
-        # Validação específica para artistas
+
         if ! is_valid_artist_link "$link"; then
-            printf "${RED}%s${RESET}\n" "$(get_msg invalid_artist_link)"
-            printf "${YELLOW}%s${RESET}\n" "$(get_msg valid_link_types_artists)"
+            fmt_error "$(get_msg invalid_artist_link)\n"
+            fmt_warning "$(get_msg valid_link_types_artists)\n"
             continue
         fi
-        
+
         links+=("$link")
 
-        if ! prompt_yes_no "$(get_msg add_more_links)"; then
+        if ! prompt_yes_no_colored "$(get_msg add_more_links)"; then
             break
         fi
     done
 
-    printf "\n${GREEN}%s${RESET}\n\n" "$(get_msg starting_downloads)"
+    newline
+    fmt_success "$(get_msg starting_downloads)"
+    newline
 
     for link in "${links[@]}"; do
-        printf "${BLUE}%s:\n%s${RESET}\n" "$(get_msg downloading)" "$link"
-        run_spotdl "download" "$link" --fetch-albums
+        fmt_info "$(get_msg downloading): $link"
+        newline
+        fmt_warning "$(get_msg executing_label)"
+        run_spotdl "download" "$link" "--fetch-albums"
     done
 
-    printf "\n${GREEN}%s${RESET}\n\n" "$(get_msg all_downloads_completed)"
-    printf "\n${YELLOW}%s${RESET}" "$(get_msg press_enter_continue)"
-    read -n 1 -r -s
+    newline
+    fmt_success "$(get_msg all_downloads_completed)\n"
+    prompt_enter_continue
 }
 
-# Função para sincronizar playlists/álbuns
+# Sincronizar playlists/álbuns
 sync_files() {
     clear
-    print_section_header "$(get_msg menu_option4)"
+    reload_download_config
+    fmt_header "$(get_msg menu_option4)"
 
-    # Informa o caminho base
-    printf "\n${CYAN}%s:${RESET} ${GREEN}%s${RESET}\n\n" \
-        "$(get_msg label_download_path)" "$FINAL_DIR"
+    fmt_config_item "$(get_msg label_download_path)" "$FINAL_DIR"
+    newline
 
     local links=()
     local link
     local add_more=true
 
-    # Coleta múltiplos links
     while $add_more; do
-        printf "\n${BOLD}%s${RESET}\n" "$(get_msg enter_link)"
-        printf "${CYAN}%s${RESET}\n" "$(get_msg press_0_to_return)"
+        fmt_prompt "$(get_msg enter_link)\n"
         read -r link
-        
+        newline
+
         [[ "$link" == "0" ]] && return 0
         [[ -z "$link" ]] && continue
-        
-        # Validação para playlists/álbums
+
         if ! is_valid_playlist_link "$link" && ! is_valid_album_link "$link"; then
-            printf "${RED}%s${RESET}\n" "$(get_msg invalid_sync_link)"
-            printf "${YELLOW}%s${RESET}\n" "$(get_msg valid_link_types_sync)"
+            fmt_error "$(get_msg invalid_sync_link)\n"
+            fmt_warning "$(get_msg valid_link_types_sync)\n"
             continue
         fi
-        
+
         links+=("$link")
 
-        # Pergunta se deseja adicionar mais links
-        printf "${BOLD}\n%s${RESET}" "$(get_msg add_more_links) [s/N] "
-        read -r resposta
-        [[ ! "$resposta" =~ ^[Ss]$ ]] && add_more=false
+        if ! prompt_yes_no_colored "$(get_msg add_more_links)"; then
+            add_more=false
+        fi
     done
 
-    # Se não houver links, retorna
     if [ ${#links[@]} -eq 0 ]; then
-        printf "\n${YELLOW}%s${RESET}\n" "$(get_msg no_links_to_sync)"
-        printf "\n${YELLOW}%s${RESET}" "$(get_msg press_enter_continue)"
-        read -n 1 -r -s
+        fmt_warning "$(get_msg no_links_to_sync)\n"
+        prompt_enter_continue
         return
     fi
 
-    # Diretório fixo baseado na configuração
     local playlists_dir="$FINAL_DIR/playlists"
     mkdir -p "$playlists_dir" || {
-        printf "${RED}%s${RESET}\n" "$(get_msg no_write_permission)"
+        fmt_error "$(get_msg no_write_permission)\n"
         return 1
     }
 
-    # Para cada link, sincronizar
     for link in "${links[@]}"; do
-        # Gera um nome de arquivo seguro a partir do link
-        local filename=$(basename "${link%%\?*}")
-        local filename_safe=$(echo "$filename" | sed 's/[\/:*?"<>|]/_/g')
+        local filename
+        filename=$(basename "${link%%\?*}")
+        local filename_safe
+        filename_safe=$(echo "$filename" | sed 's/[\/:*?"<>|]/_/g')
         local spotdl_file="$playlists_dir/$filename_safe.spotdl"
 
-        # Formata e mostra o comando que será executado
-        printf "\n${BLUE}${BOLD}%s${RESET}\n" "$(get_msg executing_label)"
-        printf "${BLUE}spotdl ${BOLD}sync ${YELLOW}\"$link\"${RESET}"
-        printf " ${BOLD}--format${RESET} ${GREEN}${editable_config[format]}${RESET}"
-        printf " ${BOLD}--bitrate${RESET} ${GREEN}${editable_config[bitrate]}${RESET}"
-        printf " ${BOLD}--output${RESET} ${GREEN}$OUTPUT_TEMPLATE${RESET}"
-        printf " ${BOLD}--overwrite${RESET} ${GREEN}$OVERWRITE_MODE${RESET}"
-        printf " ${BOLD}--threads${RESET} ${GREEN}$THREADS${RESET}"
-        printf " ${BOLD}--save-file${RESET} ${GREEN}$spotdl_file${RESET}"
+        newline
+        fmt_success "$(get_msg starting_downloads)"
         
-        # Adiciona --generate-lrc se necessário
-        if [[ "$GENERATE_LRC" == "true" ]]; then
-            printf " ${BOLD}--generate-lrc${RESET}"
-        fi
-        printf "\n\n"
+        newline
+        fmt_warning "$(get_msg executing_label)"
 
-        # Executa o comando de sincronização
-        "$SPOTDL_CMD" sync "$link" \
-            --save-file "$spotdl_file" \
-            --output "$OUTPUT_TEMPLATE" \
-            --overwrite "$OVERWRITE_MODE" \
-            --threads "$THREADS" \
-            $([[ "$GENERATE_LRC" == "true" ]] && echo "--generate-lrc")
-        
-        # Verifica se o comando foi executado com sucesso
-        if [[ $? -eq 0 ]]; then
-            printf "${GREEN}%s${RESET}\n" "$(get_msg sync_completed)"
+        # Usando run_spotdl para executar o sync
+        if run_spotdl "sync" "$link" \
+            "--save-file" "$spotdl_file"; then
+            
+            fmt_success "$(get_msg sync_completed)"
         else
-            printf "${RED}%s${RESET}\n" "$(get_msg sync_failed)"
+            fmt_error "$(get_msg sync_failed)\n"
         fi
+
     done
 
-    printf "\n${YELLOW}%s${RESET}" "$(get_msg press_enter_continue)"
-    read -n 1 -r -s
+    newline
+    prompt_enter_continue
 }

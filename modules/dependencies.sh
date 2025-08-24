@@ -15,23 +15,21 @@ check_dependencies() {
     done
 
     # Se houver dependências faltantes
-    if [[ ${#missing[@]} -gt 0 ]]; then
-        printf "\n${RED}%s${RESET}\n" "$(get_msg missing_dependencies_header)"
-        printf "${YELLOW}%s${RESET}\n\n" "$(get_msg missing_dependencies)"
+    if (( ${#missing[@]} > 0 )); then
+        fmt_error "$(get_msg missing_dependencies_header)"
+        fmt_warning "$(get_msg missing_dependencies)"
         
         # Mensagem específica para cada dependência faltante
         for dep in "${missing[@]}"; do
             case "$dep" in
-                "ffmpeg")
-                    printf "  ${RED}➔${RESET} ${BOLD}ffmpeg:${RESET} %s\n" "$(get_msg error_ffmpeg_not_found)"
-                    ;;
-                "jq")
-                    printf "  ${RED}➔${RESET} ${BOLD}jq:${RESET} %s\n" "$(get_msg error_jq_not_found)"
-                    ;;
+                ffmpeg)
+                    fmt_error "  ➔ ffmpeg: $(get_msg error_ffmpeg_not_found)" ;;
+                jq)
+                    fmt_error "  ➔ jq: $(get_msg error_jq_not_found)" ;;
             esac
         done
         
-        printf "\n${YELLOW}%s${RESET}\n" "$(get_msg attempt_detect_pkg_manager)"
+        fmt_warning "$(get_msg attempt_detect_pkg_manager)"
         suggest_installation "${missing[@]}"
         return 1
     fi
@@ -73,28 +71,25 @@ suggest_installation() {
         found_manager=true
     fi
 
-    # Se encontrou um gerenciador
     if $found_manager; then
-        printf "\n${BOLD}%s${RESET}\n" "$(get_msg install_with)"
-        printf "  ${GREEN}${BOLD}%s${RESET}\n\n" "$command"
+        fmt_info "$(get_msg install_with)"
+        fmt_info "  $command"
     else
-        printf "\n${RED}%s${RESET}\n" "$(get_msg error_pkg_manager_not_detected)"
-        printf "\n${YELLOW}%s${RESET}\n" "$(get_msg please_install_manually)"
+        fmt_error "$(get_msg error_pkg_manager_not_detected)"
+        fmt_warning "$(get_msg please_install_manually)"
         
         # Instruções manuais para cada pacote
         for dep in "${packages[@]}"; do
-            printf "\n  ${CYAN}${BOLD}%s:${RESET}\n" "$dep"
+            fmt_info "  $dep:"
             case "$dep" in
-                "ffmpeg")
-                    printf "    ${WHITE}%s${RESET}\n" "$(get_msg ffmpeg_manual_install)"
-                    ;;
-                "jq")
-                    printf "    ${WHITE}%s${RESET}\n" "$(get_msg jq_manual_install)"
-                    ;;
+                ffmpeg)
+                    fmt_info "    $(get_msg ffmpeg_manual_install)" ;;
+                jq)
+                    fmt_info "    $(get_msg jq_manual_install)" ;;
             esac
         done
     fi
     
-    printf "\n${YELLOW}%s${RESET}\n" "$(get_msg after_install_instructions)"
+    fmt_warning "$(get_msg after_install_instructions)"
     prompt_enter_continue
 }

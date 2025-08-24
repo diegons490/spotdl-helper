@@ -4,6 +4,9 @@
 declare -gA PROMPT_MSGS=()
 LANG_DIR="$(dirname "$(dirname "${BASH_SOURCE[0]}")")/lang"
 
+# Carregar módulo de formatação
+source "$(dirname "${BASH_SOURCE[0]}")/formatting.sh"
+
 # Função para carregar idioma
 load_ui_strings() {
     local lang="${1:-pt_BR}"
@@ -21,7 +24,7 @@ load_ui_strings() {
             PROMPT_MSGS["$key"]="${LANG_MSGS[$key]}"
         done
     else
-        printf "\n${RED}Arquivo de idioma não encontrado: %s${RESET}\n" "$lang_file" >&2
+        fmt_error "Arquivo de idioma não encontrado: $lang_file" >&2
         # Tenta carregar o idioma padrão como fallback
         if [[ "$lang" != "pt_BR" ]]; then
             load_ui_strings "pt_BR"
@@ -29,7 +32,6 @@ load_ui_strings() {
     fi
 }
 
-# Função para acessar mensagens com fallback seguro
 get_msg() {
     local key="$1"
 
@@ -39,7 +41,8 @@ get_msg() {
     fi
     
     if [[ -v PROMPT_MSGS[$key] ]]; then
-        printf "%s" "${PROMPT_MSGS[$key]}"
+        # Interpreta sequências de escape como \n para quebra de linha
+        printf "%b" "${PROMPT_MSGS[$key]}"
     else
         # Fallback para chaves essenciais
         case "$key" in
@@ -48,7 +51,7 @@ get_msg() {
             yes_char) echo "s" ;;
             no_char) echo "n" ;;
             *)
-                printf "\n${RED}ERROR: Chave de mensagem não encontrada: '%s'${RESET}\n" "$key" >&2
+                fmt_error "ERROR: Chave de mensagem não encontrada: '$key'" >&2
                 echo "$key" 
                 ;;
         esac

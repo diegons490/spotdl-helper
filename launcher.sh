@@ -6,7 +6,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Caminho para o main.sh dentro da pasta modules
-SCRIPT_PATH="$SCRIPT_DIR/modules/main.sh"
+SCRIPT_PATH="$SCRIPT_DIR/main.sh"
 
 # Função para executar o script no terminal
 run_in_terminal() {
