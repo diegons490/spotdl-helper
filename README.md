@@ -36,28 +36,37 @@ SpotDL Helper is a **command-line (CLI) frontend** that makes using spotDL easie
 ## 📁 Project Structure
 
 ```
-spotdl-helper/
-├── bin/
-│   └── spotdl-4.2.11-linux           # Main spotDL binary
-├── bkp_spotdl/                       # SpotDL backups
-├── icons/
-│   └── spotdl-helper.icon            # Icon for launcher or desktop entry
-├── lang/
-│   ├── en_US.lang                    # English strings
-│   ├── es_ES.lang                    # Spanish strings
-│   └── pt_BR.lang                    # Brazilian Portuguese strings
-├── modules/
-│   ├── config.sh                     # User configuration
-│   ├── dependencies.sh               # Dependency checks and installs
-│   ├── downloads.sh                  # Download logic
-│   ├── main.sh                       # Main entry point
-│   ├── manage_spotdl.sh              # Install, backup and restore spotDL
-│   ├── menu.sh                       # CLI menu system
-│   ├── ui_prompts.sh                 # CLI prompts/messages
-│   └── utils.sh                      # Helper functions
-├── install.sh                        # Install script for the helper
-├── uninstall.sh                      # Uninstall script
-└── launcher.sh                       # Script to run the helper in the terminal
+. 📂 spotdl-helper
+├── 📄 README.md
+└── 📂 bin/
+│  ├── 📄 spotdl-4.4.1-linux
+└── 📂 bkp_spotdl/
+│  ├── 📄 spotdl-4.3.0-linux
+└── 📂 icons/
+│  ├── 📄 spotdl-helper.icon
+├── 📄 install.sh
+└── 📂 lang/
+│  ├── 📄 en_US.lang
+│  ├── 📄 es_ES.lang
+│  ├── 📄 pt_BR.lang
+├── 📄 launcher.sh
+├── 📄 main.sh
+└── 📂 modules/
+│  └── 📂 config/
+│    ├── 📄 config_edit_options.sh
+│    ├── 📄 config_helper.sh
+│    ├── 📄 config_spotdl.sh
+│    ├── 📄 config_utils.sh
+│  ├── 📄 config_env.sh
+│  ├── 📄 dependencies.sh
+│  ├── 📄 downloads.sh
+│  ├── 📄 formatting.sh
+│  ├── 📄 manage_spotdl.sh
+│  ├── 📄 menu.sh
+│  ├── 📄 ui_prompts.sh
+│  ├── 📄 utils.sh
+├── 📄 preview.png
+└── 📄 uninstall.sh
 ```
 
 ---
