@@ -6,6 +6,8 @@
 load_spotdl_config() {
     if [[ ! -f "$SPOTDL_CONFIG_PATH" ]]; then
         fmt_warning "Arquivo de configuração do spotDL não encontrado. Criando novo..."
+        # DEFINIR VALORES PADRÃO ANTES DE SALVAR
+        CURRENT_LYRIC_PROVIDERS=("genius" "musixmatch") 
         save_spotdl_config
     fi
 
@@ -27,7 +29,7 @@ load_spotdl_config() {
 
         # Se não encontrar, use o padrão
         if [ ${#CURRENT_LYRIC_PROVIDERS[@]} -eq 0 ]; then
-            CURRENT_LYRIC_PROVIDERS=("genius" "musixmatch")  # Padrão sem azlyrics
+            CURRENT_LYRIC_PROVIDERS=("genius" "musixmatch")
         fi
 
         local full_template

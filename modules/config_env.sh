@@ -27,7 +27,10 @@ declare -gA EDITABLE_CONFIG=(
     [no_cache]="false"
 )
 
-declare -ga CURRENT_LYRIC_PROVIDERS=()
+# ==================================================
+# DEFINIR PROVEDORES PADRÃO
+# ==================================================
+declare -ga CURRENT_LYRIC_PROVIDERS=("genius" "musixmatch")
 
 # ==================================================
 # CONFIGURAÇÕES DO HELPER
