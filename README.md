@@ -29,7 +29,6 @@ SpotDL Helper is a **command-line (CLI) frontend** that makes using spotDL easie
 - 🔹 **Limit the number of stored backups**.
 - 🔹 **Compatible with multiple terminals** (Konsole, GNOME Terminal, Xfce Terminal, etc.).
 - 🔹 **Multilingual support**: Portuguese (pt_BR), English (en_US), Spanish (es_ES).
-- 🔹 **Future support for YAD graphical interface**.
 
 ---
 
