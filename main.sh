@@ -192,5 +192,5 @@ if [ "$DEBUG" = true ]; then
     echo ">>> DEBUG: ENTER recebido, continuando..."
 fi
 
-#update_spotdl
+update_spotdl
 main_menu
