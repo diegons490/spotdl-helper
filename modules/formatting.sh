@@ -1034,33 +1034,38 @@ fmt_interactive() {
 }
 
 # =========================
-# Atualização do Bloco de Teste
+# Bloco de Teste
 # =========================
-# Substituir o bloco de teste existente por este:
-if [[ "$1" == "--demo" ]]; then
-    fmt_demo
-elif [[ "$1" == "--quicktest" ]]; then
-    shift
-    fmt_quicktest "$@"
-elif [[ "$1" == "--interactive" ]]; then
-    fmt_interactive
-elif [[ "$1" == "--test" ]]; then
-    fmt_section "Teste de Formatação"
-    fmt_menu "Opção 1" "Opção 2" "Opção 3"
-    fmt_config_list "Usuário" "admin" "Tema" "escuro" "Versão" "1.0"
-    fmt_warning "Atenção!"
-    fmt_error "Erro fatal"
-    fmt_success "Operação concluída"
-    fmt_info "Informação geral"
-    fmt_question "Mensagem de pergunta"
-    fmt_separator "=" 40
-    fmt_progress_bar 72
-    printf "\n"
-    multi_format_line "Parte1 " red "" bold "Parte2 " green "" underline "Fim" bright_blue
-    fmt_boxed "AVISO IMPORTANTE" bright_yellow red bold
-    fmt_quote "Esta é uma citação destacada" bright_cyan
-    fmt_highlight "Este texto contém uma palavra importante para destacar" "importante" black yellow
-    fmt_log "INFO" "Mensagem de informação"
-    fmt_log "ERROR" "Erro crítico detectado"
-    fmt_cmd "echo 'Comando de exemplo'"
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    case "${1:-}" in
+        --demo) fmt_demo ;;
+        --quicktest)
+            shift
+            fmt_quicktest "$@"
+            ;;
+        --interactive) fmt_interactive ;;
+        --test)
+            fmt_section "Teste de Formatação"
+            fmt_menu "Opção 1" "Opção 2" "Opção 3"
+            fmt_config_list "Usuário" "admin" "Tema" "escuro" "Versão" "1.0"
+            fmt_warning "Atenção!"
+            fmt_error "Erro fatal"
+            fmt_success "Operação concluída"
+            fmt_info "Informação geral"
+            fmt_question "Mensagem de pergunta"
+            fmt_separator "=" 40
+            fmt_progress_bar 72
+            printf "\n"
+            multi_format_line "Parte1 " red "" bold "Parte2 " green "" underline "Fim" bright_blue
+            fmt_boxed "AVISO IMPORTANTE" bright_yellow red bold
+            fmt_quote "Esta é uma citação destacada" bright_cyan
+            fmt_highlight "Este texto contém uma palavra importante para destacar" "importante" black yellow
+            fmt_log "INFO" "Mensagem de informação"
+            fmt_log "ERROR" "Erro crítico detectado"
+            fmt_cmd "echo 'Comando de exemplo'"
+            ;;
+        *)
+            # Nada a fazer por padrão
+            ;;
+    esac
 fi
