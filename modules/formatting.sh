@@ -561,18 +561,21 @@ fmt_separator() {
     printf "%s\n" "${line// /$char}"
 }
 
-# Separador inline (sem quebra de linha)
+# Linha separadora simples
 # Parâmetros:
 #   $1 - Caractere (padrão: '-')
 #   $2 - Comprimento (padrão: 40)
 # Exemplo:
-#   printf "[%s]" "$(fmt_separator_inline "-" 10)"
-#   # Saída: [----------]
-fmt_separator_inline() {
+#   fmt_separator "=" 20
+#   # Saída: ====================
+fmt_separator() {
     local char="${1:--}"
     local length="${2:-40}"
-    printf -v line "%*s" "$length" ""
-    printf "%s" "${line// /$char}"
+    # Usar printf para criar a linha com o caractere repetido
+    local line
+    line=$(printf "%-${length}s" "")
+    line="${line// /$char}"
+    printf "%s\n" "$line"
 }
 
 # Texto centralizado com separadores
@@ -630,12 +633,14 @@ fmt_separator_color() {
 #   # ====================
 #   # ====================
 fmt_double_separator() {
-    local char="${1:==}"
+    local char="${1:-=}"
     local length="${2:-40}"
+    # Criar linha com o caractere repetido usando substituição
     local line
-    printf -v line "%*s" "$length" ""
-    local sep="${line// /$char}"
-    printf "%s\n%s\n" "$sep" "$sep"
+    line=$(printf "%-${length}s" "")
+    line="${line// /$char}"
+    # Imprimir duas linhas idênticas
+    printf "%s\n%s\n" "$line" "$line"
 }
 
 # Barra de progresso simples
