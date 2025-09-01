@@ -193,6 +193,114 @@ format_text() {
 	fi
 }
 
+# Variante do format_text sem reset no final
+format_text_norestore() {
+	local text="$1"
+	shift
+	local pre="" post=""
+	local icon=""
+
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		black | red | green | yellow | blue | magenta | cyan | white | bright_*)
+			pre+=$(get_fg_color "$1")
+			;;
+		bg_*) pre+=$(get_bg_color "${1#bg_}") ;;
+		bold | dim | underline | reverse | blink | reset) pre+=$(get_style "$1") ;;
+		*) icon="$1" ;;
+		esac
+		shift
+	done
+
+	if [[ -n "$icon" ]]; then
+		printf "%b%s %s" "$pre" "$icon" "$text"
+	else
+		printf "%b%s" "$pre" "$text"
+	fi
+}
+
+# ==========================================
+# Funções de formatação com emojis
+# ==========================================
+
+# ✅ Mensagem de sucesso com emoji
+# Uso: fmt_success_emoji "Mensagem"
+fmt_success_emoji() {
+	local msg
+	msg="$(format_text "$1" bright_green)"
+	printf "✅ %b\n" "$msg"
+}
+
+# ⚠️ Mensagem de aviso com emoji
+# Uso: fmt_warning_emoji "Mensagem"
+fmt_warning_emoji() {
+	local msg
+	msg="$(format_text "$1" bright_yellow)"
+	printf "⚠️ %b\n" "$msg"
+}
+
+# ❌ Mensagem de erro com emoji
+# Uso: fmt_error_emoji "Mensagem"
+fmt_error_emoji() {
+	local msg
+	msg="$(format_text "$1" bright_red)"
+	printf "❌ %b\n" "$msg"
+}
+
+# ℹ️ Mensagem informativa com emoji
+# Uso: fmt_info_emoji "Mensagem"
+fmt_info_emoji() {
+	local msg
+	msg="$(format_text "$1" bright_blue)"
+	printf "ℹ️ %b\n" "$msg"
+}
+
+# 🐞 Mensagem de debug com emoji
+# Uso: fmt_debug_emoji "Mensagem"
+fmt_debug_emoji() {
+	local msg
+	msg="$(format_text "$1" magenta)"
+	printf "🐞 %b\n" "$msg"
+}
+
+# ❓ Mensagem de pergunta com emoji
+# Uso: fmt_question_emoji "Mensagem"
+fmt_question_emoji() {
+	local msg
+	msg="$(format_text "$1" bright_cyan)"
+	printf "❓ %b\n" "$msg"
+}
+
+# ⚙️ Mensagem de detalhe de configuração
+# Uso: fmt_config_emoji "Mensagem"
+fmt_config_emoji() {
+	local msg
+	msg="$(format_text "$1" bright_white)"
+	printf "⚙️ %b\n" "$msg"
+}
+
+# ℹ️ Mensagem de detalhe com emoji e cores
+# Uso: fmt_config_detail_emoji "Label" "Valor"
+fmt_config_detail_emoji() {
+	local icon="ℹ️"
+	local label
+	label="$(format_text "$1:" bright_yellow)"
+	local value
+	value="$(format_text " $2" bright_green)"
+	printf "%b %b%b\n" "$icon" "$label" "$value"
+}
+
+# ==========================================
+# Exemplos de uso:
+# fmt_success_emoji "Download concluído!"
+# fmt_warning_emoji "Arquivo já existe!"
+# fmt_error_emoji "Falha ao conectar ao servidor!"
+# fmt_info_emoji "Processando arquivos..."
+# fmt_debug_emoji "Valor da variável X = 42"
+# fmt_question_emoji "Deseja continuar?"
+# fmt_config_emoji "Bitrate configurado para 320kbps"
+# ==========================================
+
 # =========================
 # Função para Exibir Comandos
 # =========================
@@ -218,7 +326,7 @@ fmt_cmd() {
 		local length="$1"
 		local line
 		line=$(printf "%-${length}s" "")
-		echo "${line// /─}"
+		printf "${line// /─}"
 	}
 
 	# Função para calcular comprimento visual considerando caracteres multibyte
@@ -226,9 +334,9 @@ fmt_cmd() {
 		local string="$1"
 		# Remove códigos ANSI primeiro (se houver)
 		local clean_string
-		clean_string=$(echo "$string" | sed 's/\x1b\[[0-9;]*m//g')
+		clean_string=$(printf "$string" | sed 's/\x1b\[[0-9;]*m//g')
 		# Calcula comprimento visual usando awk
-		echo "$clean_string" | awk '{
+		printf "$clean_string" | awk '{
             gsub(/[^\x00-\x7F]/, "x")  # Substitui caracteres não-ASCII por "x"
             print length()
         }'
@@ -350,25 +458,40 @@ italic_text() { format_text "$1" "$2" italic; }
 # =========================
 # Linha Multi-Formatada
 # =========================
-# Combina múltiplos segmentos de texto com formatações independentes
+# Combina múltiplos segmentos de texto, cada um com sua própria formatação.
 # Parâmetros:
-#   Grupos de 4 parâmetros: texto, cor_texto, cor_fundo, estilo
-#   (Últimos parâmetros podem be omitted)
+#   Devem ser passados em grupos de 4:
+#       1º: texto
+#       2º: cor do texto (foreground) ou "" para omitir
+#       3º: cor de fundo (background) ou "" para omitir
+#       4º: estilo ou "" para omitir
+#   É possível omitir cores ou estilos usando strings vazias ou passando apenas o texto.
 # Saída:
-#   Imprime linha com múltiplos textos formatados
-# Exemplo:
-#   multi_format_line "Error:" red "" bold " File not found" yellow
-#   # Saída: [Error: em vermelho negrito] [File not found em amarelo]
+#   Imprime no terminal a linha completa, aplicando cada formatação individualmente.
+# Exemplos:
+#   multi_format_line \
+#       "Error: " red "" bold \
+#       "File not found" yellow "" ""
+#   multi_format_line \
+#       "Success: " bright_green "" bold \
+#       "Operation completed" white "" underline
+
 multi_format_line() {
 	local output=""
+
 	while [[ $# -gt 0 ]]; do
-		local txt="$1" fg="" bg="" st=""
-		[[ -n "$2" && -n "${TEXT_COLORS[$2]}" ]] && fg="${TEXT_COLORS[$2]}"
-		[[ -n "$3" && -n "${BG_COLORS[$3]}" ]] && bg="${BG_COLORS[$3]}"
-		[[ -n "$4" && -n "${TEXT_STYLES[$4]}" ]] && st="${TEXT_STYLES[$4]}"
-		output+="${fg}${bg}${st}${txt}${TEXT_STYLES[reset]}"
+		local txt="$1"
+		local fg="${2:-}"
+		local bg="${3:-}"
+		local st="${4:-}"
+
+		# Aplica formatação usando format_text
+		output+=$(format_text "$txt" "$fg" "bg_$bg" "$st")
+
+		# Avança para o próximo grupo
 		shift 4 || break
 	done
+
 	printf "%b\n" "$output"
 }
 
@@ -412,7 +535,7 @@ fmt_section() {
 #   # Saída: [✔ em fundo verde] [Operação concluída em verde]
 fmt_success() {
 	local icon
-	icon="$(format_text " ✔ " bright_white bg_bright_green bold)"
+	icon="$(format_text " ✔ " bright_white bg_green bold)"
 	local msg
 	msg="$(format_text " $1" bright_green)"
 	printf "%b%b\n" "$icon" "$msg"
@@ -426,7 +549,7 @@ fmt_success() {
 #   # Saída: [? em fundo azul] [Deseja continuar? em azul]
 fmt_question() {
 	local icon
-	icon="$(format_text " ? " bright_white bg_bright_cyan bold)"
+	icon="$(format_text " ? " bright_white bg_cyan bold)"
 	local msg
 	msg="$(format_text " $1" bright_cyan)"
 	printf "%b%b\n" "$icon" "$msg"
@@ -440,9 +563,9 @@ fmt_question() {
 #   # Saída: [⚠ em fundo amarelo] [Permissões insuficientes em amarelo]
 fmt_warning() {
 	local icon
-	icon="$(format_text " ⚠ " bright_white bg_bright_yellow bold)"
+	icon="$(format_text " ! " bright_white bg_yellow bold)"
 	local msg
-	msg="$(format_text " $1" bright_yellow)"
+	msg="$(format_text " $1" yellow)"
 	printf "%b%b\n" "$icon" "$msg"
 }
 
@@ -454,7 +577,7 @@ fmt_warning() {
 #   # Saída: [✖ em fundo vermelho] [Falha na instalação em vermelho]
 fmt_error() {
 	local icon
-	icon="$(format_text " ✖ " bright_white bg_bright_red bold)"
+	icon="$(format_text " ✖ " bright_white bg_red bold)"
 	local msg
 	msg="$(format_text " $1" bright_red)"
 	printf "%b%b\n" "$icon" "$msg"
@@ -468,7 +591,7 @@ fmt_error() {
 #   # Saída: [i em fundo azul] [Use --help para ajuda em azul]
 fmt_info() {
 	local icon
-	icon="$(format_text " i " bright_white bg_bright_blue bold)"
+	icon="$(format_text " i " bright_white bg_blue bold)"
 	local msg
 	msg="$(format_text " $1" bright_blue)"
 	printf "%b%b\n" "$icon" "$msg"
@@ -483,11 +606,11 @@ fmt_info() {
 #   # Saída: [i em azul] [Usuário: em amarelo negrito] [admin em verde negrito]
 fmt_config_detail() {
 	local icon
-	icon="$(format_text " i " bright_white bg_bright_blue bold)"
+	icon="$(format_text " i " bright_white bg_blue bold)"
 	local label
-	label="$(format_text "$1:" bright_yellow bold)"
+	label="$(format_text "$1:" bright_yellow)"
 	local value
-	value="$(format_text " $2" bright_green bold)"
+	value="$(format_text " $2" bright_green)"
 	printf "%b %b%b\n" "$icon" "$label" "$value"
 }
 
@@ -499,7 +622,7 @@ fmt_config_detail() {
 #   # Saída: [d em fundo magenta] [Variável X=42 em magenta]
 fmt_debug() {
 	local icon
-	icon="$(format_text " d " bright_white bg_bright_magenta bold)"
+	icon="$(format_text " d " bright_white bg_magenta bold)"
 	local msg
 	msg="$(format_text " $1" bright_magenta)"
 	printf "%b%b\n" "$icon" "$msg"
@@ -524,8 +647,8 @@ fmt_bold() {
 #   # Saída: [1 em amarelo]) [Instalar pacote]
 fmt_option() {
 	printf "%b) %b\n" \
-		"$(format_text "$1" bright_yellow)" \
-		"$2"
+		"$(format_text "$1" bright_yellow bold)" \
+		"$(format_text "$2" bright_white)"
 }
 
 # Item de configuração formatado
@@ -990,7 +1113,7 @@ fmt_quicktest() {
 				;;
 			# Comandos formatados
 			fmt_cmd)
-				"$func" "echo 'test command'"
+				"$func" "printf 'test command'"
 				;;
 			# Funções genéricas de teste
 			*)
@@ -1094,7 +1217,7 @@ fmt_interactive() {
 			fmt_section "COMANDOS FORMATADOS"
 			fmt_cmd "ls -la"
 			fmt_cmd "curl -X GET https://api.example.com/v1/users"
-			fmt_cmd "docker run -it --rm ubuntu:20.04 bash -c 'echo Hello World'"
+			fmt_cmd "docker run -it --rm ubuntu:20.04 bash -c 'printf Hello World'"
 			fmt_prompt "Pressione Enter para continuar..."
 			read -r
 			;;
@@ -1102,21 +1225,21 @@ fmt_interactive() {
 			tput clear
 			fmt_section "ÍCONES PERSONALIZADOS"
 			format_text " Tecnologia" bright_blue "💻"
-			echo
+			printf
 			format_text " Música" bright_green "🎵"
-			echo
+			printf
 			format_text " Arquivos" bright_yellow "📂"
-			echo
+			printf
 			format_text " Pesquisa" bright_magenta "🔍"
-			echo
+			printf
 			format_text " Energia" bright_yellow "⚡"
-			echo
+			printf
 			format_text " Ideia" bright_cyan "💡"
-			echo
+			printf
 			format_text " Linux" bright_white "🐧"
-			echo
+			printf
 			format_text " Foguete" bright_cyan "🚀"
-			echo
+			printf
 			fmt_prompt "Pressione Enter para continuar..."
 			read -r
 			;;
@@ -1169,18 +1292,31 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 		fmt_success "Operação concluída"
 		fmt_info "Informação geral"
 		fmt_question "Mensagem de pergunta"
+		fmt_config_detail "Mensagem" "Valor"
+
+		# Mensagens de alerta e status com emoji
+		fmt_warning_emoji "Atenção!"
+		fmt_error_emoji "Erro fatal"
+		fmt_success_emoji "Operação concluída"
+		fmt_info_emoji "Informação geral"
+		fmt_question_emoji "Mensagem de pergunta"
+		fmt_config_detail_emoji "Mensagem" "Valor"
 
 		# Separador customizado
 		fmt_separator "=" 40
 
 		# Barra de progresso de exemplo
 		fmt_progress_bar 72
-		printf "\n"
+		newline
 
 		# Linha com múltiplas formatações
-		multi_format_line "Parte1 " red "" bold \
-			"Parte2 " green "" underline \
-			"Fim" bright_blue
+		multi_format_line \
+			"Texto1 " red "" bold \
+			"Texto2 " green "" "" \
+			"Texto3 " yellow "" underline \
+			"Texto4 " bright_blue "" bold \
+			"Texto5 " cyan "" dim \
+			"Texto6" magenta "" ""
 
 		# Caixa de destaque
 		fmt_boxed "AVISO IMPORTANTE" bright_yellow red bold
@@ -1196,7 +1332,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 		fmt_log "ERROR" "Erro crítico detectado"
 
 		# Comando formatado
-		fmt_cmd "echo 'Comando de exemplo'"
+		fmt_cmd "printf 'Comando de exemplo'"
 		;;
 	*)
 		# Nenhuma ação por padrão

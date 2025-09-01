@@ -4,64 +4,64 @@
 
 # Carrega configurações do spotDL
 load_spotdl_config() {
-    if [[ ! -f "$SPOTDL_CONFIG_PATH" ]]; then
-        fmt_warning "Arquivo de configuração do spotDL não encontrado. Criando novo..."
-        # DEFINIR VALORES PADRÃO ANTES DE SALVAR
-        CURRENT_LYRIC_PROVIDERS=("genius" "musixmatch") 
-        save_spotdl_config
-    fi
+	if [[ ! -f "$SPOTDL_CONFIG_PATH" ]]; then
+		fmt_warning "Arquivo de configuração do spotDL não encontrado. Criando novo..."
+		# DEFINIR VALORES PADRÃO ANTES DE SALVAR
+		CURRENT_LYRIC_PROVIDERS=("genius" "musixmatch")
+		save_spotdl_config
+	fi
 
-    if [[ -f "$SPOTDL_CONFIG_PATH" ]]; then
-        for key in "${!EDITABLE_CONFIG[@]}"; do
-            value=$(jq -r --arg k "$key" '.[$k] // empty' "$SPOTDL_CONFIG_PATH" 2>/dev/null || echo "")
-            if [[ -n "$value" && "$value" != "null" ]]; then
-                EDITABLE_CONFIG[$key]="$value"
-            fi
-        done
+	if [[ -f "$SPOTDL_CONFIG_PATH" ]]; then
+		for key in "${!EDITABLE_CONFIG[@]}"; do
+			value=$(jq -r --arg k "$key" '.[$k] // empty' "$SPOTDL_CONFIG_PATH" 2>/dev/null || echo "")
+			if [[ -n "$value" && "$value" != "null" ]]; then
+				EDITABLE_CONFIG[$key]="$value"
+			fi
+		done
 
-        # Carregar provedores de letras
-        CURRENT_LYRIC_PROVIDERS=()
-        if [[ -f "$SPOTDL_CONFIG_PATH" ]]; then
-            while IFS= read -r provider; do
-                [[ -n "$provider" && "$provider" != "null" ]] && CURRENT_LYRIC_PROVIDERS+=("$provider")
-            done < <(jq -r '.lyrics_providers[]?' "$SPOTDL_CONFIG_PATH" 2>/dev/null)
-        fi
+		# Carregar provedores de letras
+		CURRENT_LYRIC_PROVIDERS=()
+		if [[ -f "$SPOTDL_CONFIG_PATH" ]]; then
+			while IFS= read -r provider; do
+				[[ -n "$provider" && "$provider" != "null" ]] && CURRENT_LYRIC_PROVIDERS+=("$provider")
+			done < <(jq -r '.lyrics_providers[]?' "$SPOTDL_CONFIG_PATH" 2>/dev/null)
+		fi
 
-        # Se não encontrar, use o padrão
-        if [ ${#CURRENT_LYRIC_PROVIDERS[@]} -eq 0 ]; then
-            CURRENT_LYRIC_PROVIDERS=("genius" "musixmatch")
-        fi
+		# Se não encontrar, use o padrão
+		if [ ${#CURRENT_LYRIC_PROVIDERS[@]} -eq 0 ]; then
+			CURRENT_LYRIC_PROVIDERS=("genius" "musixmatch")
+		fi
 
-        local full_template
-        full_template=$(jq -r '.output // empty' "$SPOTDL_CONFIG_PATH")
+		local full_template
+		full_template=$(jq -r '.output // empty' "$SPOTDL_CONFIG_PATH")
 
-        if [[ -z "$full_template" || "$full_template" == "null" ]]; then
-            FINAL_DIR="${XDG_DOWNLOADS_DIR}/SpotDL"
-            OUTPUT_STRUCTURE="{artist}/{album}/{title}.{output-ext}"
-            save_spotdl_config
-        else
-            FINAL_DIR="${full_template%%\{*}"
-            FINAL_DIR="${FINAL_DIR%/}"
-            OUTPUT_STRUCTURE="${full_template#${FINAL_DIR}/}"
-        fi
-    fi
+		if [[ -z "$full_template" || "$full_template" == "null" ]]; then
+			FINAL_DIR="${XDG_DOWNLOADS_DIR}/SpotDL"
+			OUTPUT_STRUCTURE="{artist}/{album}/{title}.{output-ext}"
+			save_spotdl_config
+		else
+			FINAL_DIR="${full_template%%\{*}"
+			FINAL_DIR="${FINAL_DIR%/}"
+			OUTPUT_STRUCTURE="${full_template#${FINAL_DIR}/}"
+		fi
+	fi
 }
 
 # Salva configurações do spotDL (arquivo completo)
 save_spotdl_config() {
-    mkdir -p "$(dirname "$SPOTDL_CONFIG_PATH")"
+	mkdir -p "$(dirname "$SPOTDL_CONFIG_PATH")"
 
-    [[ -z "$FINAL_DIR" ]] && FINAL_DIR="${XDG_DOWNLOADS_DIR}/SpotDL"
-    [[ -z "$OUTPUT_STRUCTURE" ]] && OUTPUT_STRUCTURE="{artist}/{album}/{title}.{output-ext}"
+	[[ -z "$FINAL_DIR" ]] && FINAL_DIR="${XDG_DOWNLOADS_DIR}/SpotDL"
+	[[ -z "$OUTPUT_STRUCTURE" ]] && OUTPUT_STRUCTURE="{artist}/{album}/{title}.{output-ext}"
 
-    local full_output="${FINAL_DIR}/${OUTPUT_STRUCTURE}"
-    local escaped_output_template="${full_output//\\/\\\\}"
+	local full_output="${FINAL_DIR}/${OUTPUT_STRUCTURE}"
+	local escaped_output_template="${full_output//\\/\\\\}"
 
-    # Converter array de provedores de letras para formato JSON
-    local lyrics_providers_json
-    lyrics_providers_json=$(printf '%s\n' "${CURRENT_LYRIC_PROVIDERS[@]}" | jq -R . | jq -s .)
+	# Converter array de provedores de letras para formato JSON
+	local lyrics_providers_json
+	lyrics_providers_json=$(printf '%s\n' "${CURRENT_LYRIC_PROVIDERS[@]}" | jq -R . | jq -s .)
 
-    cat > "$SPOTDL_CONFIG_PATH" <<EOF
+	cat >"$SPOTDL_CONFIG_PATH" <<EOF
 {
     "client_id": "5f573c9620494bae87890c0f08a60293",
     "client_secret": "212476d9b0f3472eaa762d90b19b0ba8",
@@ -138,42 +138,42 @@ EOF
 
 # Atualiza uma configuração específica
 update_spotdl_config() {
-    local key="$1"
-    local value="$2"
+	local key="$1"
+	local value="$2"
 
-    if [[ ! -f "$SPOTDL_CONFIG_PATH" ]]; then
-        save_spotdl_config
-        return
-    fi
+	if [[ ! -f "$SPOTDL_CONFIG_PATH" ]]; then
+		save_spotdl_config
+		return
+	fi
 
-    local jq_filter
-    case "$value" in
-        true|false|null) 
-            jq_filter=".\"$key\" = $value"
-            ;;
-        ''|*[!0-9]*) 
-            local escaped_value="${value//\"/\\\"}"
-            jq_filter=".\"$key\" = \"$escaped_value\""
-            ;;
-        *) 
-            jq_filter=".\"$key\" = $value"
-            ;;
-    esac
+	local jq_filter
+	case "$value" in
+	true | false | null)
+		jq_filter=".\"$key\" = $value"
+		;;
+	'' | *[!0-9]*)
+		local escaped_value="${value//\"/\\\"}"
+		jq_filter=".\"$key\" = \"$escaped_value\""
+		;;
+	*)
+		jq_filter=".\"$key\" = $value"
+		;;
+	esac
 
-    jq "$jq_filter" "$SPOTDL_CONFIG_PATH" > "${SPOTDL_CONFIG_PATH}.tmp" && mv "${SPOTDL_CONFIG_PATH}.tmp" "$SPOTDL_CONFIG_PATH"
+	jq "$jq_filter" "$SPOTDL_CONFIG_PATH" >"${SPOTDL_CONFIG_PATH}.tmp" && mv "${SPOTDL_CONFIG_PATH}.tmp" "$SPOTDL_CONFIG_PATH"
 }
 
 # Salva uma única configuração
 save_single_config() {
-    local key="$1"
-    local value="${EDITABLE_CONFIG[$key]}"
+	local key="$1"
+	local value="${EDITABLE_CONFIG[$key]}"
 
-    case "$key" in
-        format|bitrate|overwrite|threads|generate_lrc|skip_album_art|sync_without_deleting|sync_remove_lrc|no_cache)
-            update_spotdl_config "$key" "$value"
-            ;;
-        *)
-            fmt_error "Chave desconhecida: $key" >&2
-            ;;
-    esac
+	case "$key" in
+	format | bitrate | overwrite | threads | generate_lrc | skip_album_art | sync_without_deleting | sync_remove_lrc | no_cache)
+		update_spotdl_config "$key" "$value"
+		;;
+	*)
+		fmt_error "Chave desconhecida: $key" >&2
+		;;
+	esac
 }
