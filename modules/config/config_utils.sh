@@ -245,8 +245,6 @@ open_manual_config() {
 	reload_application_config
 }
 
-# Adicione esta função no arquivo:
-
 # Função para formatar a exibição dos provedores de letras
 format_lyrics_providers_display() {
 	if [ ${#CURRENT_LYRIC_PROVIDERS[@]} -eq 0 ]; then
