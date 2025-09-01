@@ -38,9 +38,9 @@ SpotDL Helper is a **command-line (CLI) frontend** that makes using spotDL easie
 . 📂 spotdl-helper
 ├── 📄 README.md
 └── 📂 bin/
-│  ├── 📄 spotdl-4.4.1-linux
+│  ├── 📄 spotdl-X.X-linux
 └── 📂 bkp_spotdl/
-│  ├── 📄 spotdl-4.3.0-linux
+│  ├── 📄 spotdl-X.X-linux
 └── 📂 icons/
 │  ├── 📄 spotdl-helper.icon
 ├── 📄 install.sh
