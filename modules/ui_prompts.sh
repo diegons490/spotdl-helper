@@ -1,11 +1,9 @@
 #!/bin/bash
-# modules/ui_prompts.sh - Sistema de idiomas modularizado
+# modules/ui_prompts.sh
+# Sistema de idiomas modularizado
 
 declare -gA PROMPT_MSGS=()
 LANG_DIR="$(dirname "$(dirname "${BASH_SOURCE[0]}")")/lang"
-
-# Carregar módulo de formatação
-source "$(dirname "${BASH_SOURCE[0]}")/formatting.sh"
 
 # Função para carregar idioma
 load_ui_strings() {

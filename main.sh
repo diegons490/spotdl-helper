@@ -1,21 +1,82 @@
 #!/bin/bash
-# main.sh - Script principal com modo debug aprimorado e cores ajustadas
+# main.sh - Script principal com modo debug
 
 # ==================================================
 # CONFIGURAÇÕES DE DEBUG
 # ==================================================
 DEBUG=false
+for arg in "$@"; do
+	case "$arg" in
+	--debug | --verbose) DEBUG=true ;;
+	esac
+done
 
 # ==================================================
-# PROCESSAMENTO DE ARGUMENTOS
+# FUNÇÕES DE CORES (usando tput com fallback)
 # ==================================================
-for arg in "$@"; do
-    case "$arg" in
-        --debug|--verbose)
-            DEBUG=true
-            ;;
-    esac
-done
+init_colors() {
+	if command -v tput >/dev/null 2>&1; then
+		RED=$(tput setaf 1)
+		GREEN=$(tput setaf 2)
+		YELLOW=$(tput setaf 3)
+		BLUE=$(tput setaf 4)
+		MAGENTA=$(tput setaf 5)
+		CYAN=$(tput setaf 6)
+		WHITE=$(tput setaf 7)
+		RESET=$(tput sgr0)
+	else
+		RED='\033[0;31m'
+		GREEN='\033[0;32m'
+		YELLOW='\033[1;33m'
+		BLUE='\033[0;34m'
+		MAGENTA='\033[0;35m'
+		CYAN='\033[0;36m'
+		WHITE='\033[1;37m'
+		RESET='\033[0m'
+	fi
+}
+init_colors
+
+# ==================================================
+# FUNÇÕES DE LOGGING CENTRALIZADAS
+# ==================================================
+debug_log() {
+	[ "$DEBUG" = true ] || return
+	local timestamp
+	timestamp=$(date +"%T.%3N")
+	printf "${YELLOW}[DEBUG][$timestamp]${RESET} %s\n" "$*" >&2
+}
+
+log_step() {
+	[ "$DEBUG" = true ] || return
+	printf "\n${CYAN}==================================================${RESET}\n" >&2
+	printf "${CYAN}==> $*${RESET}\n" >&2
+	printf "${CYAN}==================================================${RESET}\n\n" >&2
+}
+
+log_module_status() {
+	local status="$1" path="$2" name
+	name=$(basename "$path")
+	if [ "$status" = "OK" ]; then
+		debug_log "${GREEN}✔ Módulo carregado${RESET} → ${MAGENTA}${name}${RESET} ($(dirname "$path"))"
+	else
+		printf "${RED}✖ Módulo não encontrado → ${name} ($(dirname "$path"))${RESET}\n" >&2
+	fi
+}
+
+# ==================================================
+# FUNÇÃO PARA CARREGAR MÓDULOS
+# ==================================================
+load_module() {
+	local path="$1"
+	if [[ -f "$path" ]]; then
+		source "$path"
+		log_module_status "OK" "$path"
+	else
+		log_module_status "FAIL" "$path"
+		exit 1
+	fi
+}
 
 # ==================================================
 # DIRETÓRIOS E VARIÁVEIS ESSENCIAIS
@@ -23,174 +84,141 @@ done
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULES_DIR="$BASE_DIR/modules"
 LANG_DIR="$BASE_DIR/lang"
-XDG_DOWNLOADS_DIR="$(xdg-user-dir DOWNLOAD 2>/dev/null)"
-if [[ -z "$XDG_DOWNLOADS_DIR" ]]; then
-    XDG_DOWNLOADS_DIR="$HOME/Downloads"
-fi
+XDG_DOWNLOADS_DIR="$(xdg-user-dir DOWNLOAD 2>/dev/null || echo "$HOME/Downloads")"
 
 SPOTDL_CONFIG_DIR="$HOME/.spotdl"
 HELPER_CONFIG_DIR="$HOME/.spotdl-helper"
-
 SPOTDL_CONFIG_PATH="$SPOTDL_CONFIG_DIR/config.json"
 HELPER_CONFIG_PATH="$HELPER_CONFIG_DIR/helper-config.json"
 
 # ==================================================
-# FUNÇÕES DE LOGGING APRIMORADAS
+# CARREGAR MÓDULOS DE FORMATAÇÃO (agora com cores hardcoded)
 # ==================================================
-debug_log() {
-    if [ "$DEBUG" = true ]; then
-        local timestamp
-        timestamp=$(date +"%T.%3N")
-        printf "%b\n" "$(format_text "[DEBUG][$timestamp] $*" bright_white)" >&2
-    fi
-}
-
-log_step() {
-    if [ "$DEBUG" = true ]; then
-        printf "\n%b\n" "$(format_text "==> $*" bright_cyan bold)" >&2
-    fi
-}
+log_step "CARREGANDO MÓDULOS DE FORMATAÇÃO"
+load_module "$MODULES_DIR/formatting/_load.sh"
 
 # ==================================================
-# CARREGAR MÓDULOS ESSENCIAIS
+# CARREGAR MÓDULOS BASE
 # ==================================================
 log_step "CARREGANDO MÓDULOS BASE"
-source "$MODULES_DIR/formatting.sh"   # cores e estilos para saída
-source "$MODULES_DIR/utils.sh"        # funções utilitárias
-source "$MODULES_DIR/ui_prompts.sh"   # interação e mensagens multilíngues
-source "$MODULES_DIR/config_env.sh"   # variáveis globais e configs auxiliares
-debug_log "Módulos base carregados"
+for base in utils ui_prompts; do
+	load_module "$MODULES_DIR/${base}.sh"
+done
+
+# ==================================================
+# CARREGAR MÓDULOS DE CONFIGURAÇÃO
+# ==================================================
+load_module "$MODULES_DIR/config/_load.sh"
 
 # ==================================================
 # FUNÇÕES AUXILIARES
 # ==================================================
 init_config_system() {
-    log_step "INICIALIZANDO SISTEMA DE CONFIGURAÇÃO"
-    mkdir -p "$SPOTDL_CONFIG_DIR" "$HELPER_CONFIG_DIR"
-    debug_log "Diretórios de configuração criados/verificados"
+	log_step "INICIALIZANDO SISTEMA DE CONFIGURAÇÃO"
+	mkdir -p "$SPOTDL_CONFIG_DIR" "$HELPER_CONFIG_DIR"
+	debug_log "${CYAN}Diretórios de configuração:${GREEN} criados/verificados${RESET}"
 
-    if [[ ! -f "$SPOTDL_CONFIG_PATH" ]]; then
-        debug_log "Criando arquivo de configuração do spotDL..."
-        save_spotdl_config
-    fi
-
-    if [[ ! -f "$HELPER_CONFIG_PATH" ]]; then
-        debug_log "Criando arquivo de configuração do helper..."
-        save_helper_config
-    fi
+	[[ -f "$SPOTDL_CONFIG_PATH" ]] || {
+		debug_log "${CYAN}Criando config:${GREEN} spotDL${RESET}"
+		save_spotdl_config
+	}
+	[[ -f "$HELPER_CONFIG_PATH" ]] || {
+		debug_log "${CYAN}Criando config:${GREEN} helper${RESET}"
+		save_helper_config
+	}
 }
 
 # ==================================================
 # INICIALIZAÇÃO
 # ==================================================
 log_step "INICIANDO SISTEMA"
-debug_log "Diretório base: $BASE_DIR"
-debug_log "Diretório de módulos: $MODULES_DIR"
-debug_log "Config spotDL: $SPOTDL_CONFIG_PATH"
-debug_log "Config helper: $HELPER_CONFIG_PATH"
-debug_log "Downloads padrão: $XDG_DOWNLOADS_DIR"
+debug_log "${CYAN}Diretório base:${GREEN} $BASE_DIR${RESET}"
+debug_log "${CYAN}Diretório de módulos:${GREEN} $MODULES_DIR${RESET}"
+debug_log "${CYAN}Config spotDL:${GREEN} $SPOTDL_CONFIG_PATH${RESET}"
+debug_log "${CYAN}Config helper:${GREEN} $HELPER_CONFIG_PATH${RESET}"
+debug_log "${CYAN}Downloads padrão:${GREEN} $XDG_DOWNLOADS_DIR${RESET}"
 
 init_config_system
 
 # ==================================================
-# CARREGAR MÓDULOS SECUNDÁRIOS
+# CARREGAR MÓDULOS FUNCIONAIS
 # ==================================================
-log_step "CARREGANDO MÓDULOS FUNCIONAIS"
-for module in dependencies downloads manage_spotdl menu; do
-    module_path="$MODULES_DIR/${module}.sh"
-    if [[ -f "$module_path" ]]; then
-        source "$module_path"
-        debug_log "Módulo carregado: ${module}.sh"
-    else
-        fmt_error "ERRO: Módulo não encontrado - ${module}.sh" >&2
-        exit 1
-    fi
-done
+log_step "CARREGANDO MÓDULOS DE DOWNLOADS"
+load_module "$MODULES_DIR/download/_load.sh"
+
+log_step "CARREGANDO MÓDULOS DO MANAGER SPOTDL"
+load_module "$MODULES_DIR/manage_spotdl/_load.sh"
+
+# Dependências
+load_module "$MODULES_DIR/dependencies.sh"
+
+# Menu
+load_module "$MODULES_DIR/menu.sh"
 
 # ==================================================
 # CARREGAR CONFIGURAÇÕES E IDIOMA
 # ==================================================
 log_step "CARREGANDO CONFIGURAÇÕES"
-
-# Primeiro carregar traduções para poder exibir mensagens
 load_ui_strings "${CURRENT_LANG:-pt_BR}"
-
-# Agora carregar configurações (sem exibição de resumo)
 load_config
-debug_log "Configurações carregadas"
+debug_log "${CYAN}Configurações:${GREEN} carregadas${RESET}"
 
 # ==================================================
 # VERIFICAÇÕES INICIAIS
 # ==================================================
 log_step "VERIFICANDO DEPENDÊNCIAS"
-if ! check_dependencies; then
-    fmt_error "Dependências essenciais faltando. Abortando." >&2
-    exit 1
-else
-    debug_log "Dependências verificadas com sucesso"
-fi
+check_dependencies || {
+	printf "${RED}Dependências faltando. Abortando.${RESET}\n"
+	exit 1
+}
+debug_log "${CYAN}Dependências:${GREEN} verificadas com sucesso${RESET}"
 
 log_step "VERIFICANDO SPOTDL"
-if ! check_spotdl; then
-    fmt_error "Falha ao verificar spotDL. Abortando." >&2
-    exit 1
+if check_spotdl; then
+	debug_log "${CYAN}SpotDL verificado:${GREEN} $SPOTDL_CMD${RESET}"
+	spotdl_version=$("$SPOTDL_CMD" --version 2>/dev/null | grep -oP '[0-9]+\.[0-9]+\.[0-9]+' || echo "N/A")
+	debug_log "${CYAN}Versão SpotDL:${GREEN} $spotdl_version${RESET}"
 else
-    debug_log "SpotDL verificado: $SPOTDL_CMD"
-    spotdl_version=$("$SPOTDL_CMD" --version 2>/dev/null | grep -oP '[0-9]+\.[0-9]+\.[0-9]+' || echo "N/A")
-    debug_log "Versão SpotDL: $spotdl_version"
+	printf "${RED}Falha ao verificar spotDL. Abortando.${RESET}\n"
+	exit 1
 fi
 
 # ==================================================
 # FUNÇÃO DE PAUSA NO DEBUG
 # ==================================================
 debug_pause() {
-    if [ "$DEBUG" = true ]; then
-        # imprime separador e mensagem direto no terminal
-        printf "\n========================================\n"
-        printf "\033[1;36mPressione Enter para continuar...\033[0m\n"
-        printf "========================================\n"
-        # lê diretamente do terminal interativo
-        while true; do
-            read -r -n 1 key </dev/tty
-            break
-        done
-    fi
+	[ "$DEBUG" = true ] || return
+	printf "\n${CYAN}==================================================${RESET}\n"
+	printf "${CYAN}==>${RESET}${GREEN} PRESSIONE ENTER PARA CONTINUAR...${RESET}\n"
+	printf "${CYAN}==================================================${RESET}\n"
+	read -r -n 1 _ </dev/tty
 }
-
-
 
 # ==================================================
 # EXECUÇÃO PRINCIPAL (MODO DEBUG)
 # ==================================================
 log_step "INICIANDO APLICAÇÃO"
-debug_log "Versão DEBUG ativa"
-debug_log "Configurações atuais:"
-debug_log "  Idioma: $CURRENT_LANG"
-debug_log "  Diretório downloads: $FINAL_DIR"
-debug_log "  Template: $OUTPUT_STRUCTURE"
-debug_log "  Formato: ${EDITABLE_CONFIG[format]}"
-debug_log "  Bitrate: ${EDITABLE_CONFIG[bitrate]}"
-debug_log "  Threads: ${EDITABLE_CONFIG[threads]}"
-debug_log "  Gerar letras: ${EDITABLE_CONFIG[generate_lrc]}"
-debug_log "  Pular capa: ${EDITABLE_CONFIG[skip_album_art]}"
-debug_log "  Sincronizar sem deletar: ${EDITABLE_CONFIG[sync_without_deleting]}"
-debug_log "  Remover LRC na sincronização: ${EDITABLE_CONFIG[sync_remove_lrc]}"
-debug_log "  Sobrescrita: ${EDITABLE_CONFIG[overwrite]}"
-debug_log "  Sem cache: ${EDITABLE_CONFIG[no_cache]}"
-debug_log "  Máximo de backups: $MAX_BACKUPS"
+debug_log "${CYAN}Configurações atuais:${RESET}"
+debug_log "  ${CYAN}Idioma:${GREEN} $CURRENT_LANG${RESET}"
+debug_log "  ${CYAN}Diretório downloads:${GREEN} $FINAL_DIR${RESET}"
+debug_log "  ${CYAN}Template:${GREEN} $OUTPUT_STRUCTURE${RESET}"
+debug_log "  ${CYAN}Formato:${GREEN} ${EDITABLE_CONFIG[format]}${RESET}"
+debug_log "  ${CYAN}Bitrate:${GREEN} ${EDITABLE_CONFIG[bitrate]}${RESET}"
+debug_log "  ${CYAN}Threads:${GREEN} ${EDITABLE_CONFIG[threads]}${RESET}"
+debug_log "  ${CYAN}Gerar letras:${GREEN} ${EDITABLE_CONFIG[generate_lrc]}${RESET}"
+debug_log "  ${CYAN}Pular capa:${GREEN} ${EDITABLE_CONFIG[skip_album_art]}${RESET}"
+debug_log "  ${CYAN}Sincronizar sem deletar:${GREEN} ${EDITABLE_CONFIG[sync_without_deleting]}${RESET}"
+debug_log "  ${CYAN}Remover LRC na sincronização:${GREEN} ${EDITABLE_CONFIG[sync_remove_lrc]}${RESET}"
+debug_log "  ${CYAN}Sobrescrita:${GREEN} ${EDITABLE_CONFIG[overwrite]}${RESET}"
+debug_log "  ${CYAN}Sem cache:${GREEN} ${EDITABLE_CONFIG[no_cache]}${RESET}"
+debug_log "  ${CYAN}Máximo de backups:${GREEN} $MAX_BACKUPS${RESET}"
+debug_log "  ${CYAN}Provedores de letras:${GREEN} $(format_lyrics_providers_display)${RESET}"
 
 if [ "$DEBUG" = true ]; then
-    newline
-    fmt_separator
-    fmt_info "$(format_text "MODO DEBUG ATIVADO" bright_white bold)"
-    fmt_separator
-    newline
-
-    # teste isolado de pausa
-    echo ">>> DEBUG: aguardando ENTER (teste isolado)"
-    read -r _ < /dev/tty
-    echo ">>> DEBUG: ENTER recebido, continuando..."
+	debug_pause
 fi
 
-update_spotdl
+# ==================================================
+# CHAMADA DO MENU PRINCIPAL
+# ==================================================
 main_menu

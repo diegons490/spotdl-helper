@@ -38,9 +38,9 @@ SpotDL Helper is a **command-line (CLI) frontend** that makes using spotDL easie
 . 📂 spotdl-helper
 ├── 📄 README.md
 └── 📂 bin/
-│  ├── 📄 spotdl-X.X-linux
+│  ├── 📄 spotdl-4.4.2-linux
 └── 📂 bkp_spotdl/
-│  ├── 📄 spotdl-X.X-linux
+│  ├── 📄 spotdl-4.4.1-linux
 └── 📂 icons/
 │  ├── 📄 spotdl-helper.icon
 ├── 📄 install.sh
@@ -52,15 +52,45 @@ SpotDL Helper is a **command-line (CLI) frontend** that makes using spotDL easie
 ├── 📄 main.sh
 └── 📂 modules/
 │  └── 📂 config/
+│    ├── 📄 _load.sh
 │    ├── 📄 config_edit_options.sh
+│    ├── 📄 config_env.sh
 │    ├── 📄 config_helper.sh
 │    ├── 📄 config_spotdl.sh
 │    ├── 📄 config_utils.sh
-│  ├── 📄 config_env.sh
 │  ├── 📄 dependencies.sh
-│  ├── 📄 downloads.sh
-│  ├── 📄 formatting.sh
-│  ├── 📄 manage_spotdl.sh
+│  └── 📂 download/
+│    ├── 📄 _load.sh
+│    ├── 📄 config_vars.sh
+│    ├── 📄 download_artist_albums.sh
+│    ├── 📄 download_music.sh
+│    ├── 📄 download_playlists.sh
+│    ├── 📄 reload_config.sh
+│    ├── 📄 run_spotdl.sh
+│    ├── 📄 sync_files.sh
+│    ├── 📄 validate_links.sh
+│  └── 📂 formatting/
+│    ├── 📄 _load.sh
+│    ├── 📄 colors.sh
+│    ├── 📄 commands.sh
+│    ├── 📄 config.sh
+│    ├── 📄 core.sh
+│    ├── 📄 demo.sh
+│    ├── 📄 interactive.sh
+│    ├── 📄 messages.sh
+│    ├── 📄 messages_emoji.sh
+│    ├── 📄 quicktest.sh
+│    ├── 📄 styles.sh
+│    ├── 📄 test.sh
+│    ├── 📄 visuals.sh
+│  └── 📂 manage_spotdl/
+│    ├── 📄 _load.sh
+│    ├── 📄 check_spotdl.sh
+│    ├── 📄 get_backup_limit.sh
+│    ├── 📄 manage_backups.sh
+│    ├── 📄 manage_spotdl_vars.sh
+│    ├── 📄 restore_backup.sh
+│    ├── 📄 update_spotdl.sh
 │  ├── 📄 menu.sh
 │  ├── 📄 ui_prompts.sh
 │  ├── 📄 utils.sh

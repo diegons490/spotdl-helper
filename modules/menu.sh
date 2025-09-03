@@ -1,5 +1,6 @@
 #!/bin/bash
-# modules/menu.sh - Menu principal e todos os submenus CLI
+# modules/menu.sh
+# Menu principal e todos os submenus CLI
 
 main_menu() {
 	while true; do

@@ -43,7 +43,7 @@ prompt_yes_no() {
 }
 
 # ================================
-# prompt_yes_no_colored
+# prompt_yes_no_ansi
 # ================================
 # Exibe uma pergunta com ícone "?" (branco/ciano), mensagem (ciano) e opções [s/n] (amarelo).
 # Lê a resposta do usuário e retorna:
@@ -51,7 +51,7 @@ prompt_yes_no() {
 #   1 → opção "não"
 # Se inválida, exibe erro e repete a pergunta.
 # Uso:
-#   if prompt_yes_no_colored "Deseja adicionar outro link?"; then
+#   if prompt_yes_no_ansi "Deseja adicionar outro link?"; then
 #       echo "Sim"
 #   else
 #       echo "Não"
