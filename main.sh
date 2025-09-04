@@ -187,6 +187,11 @@ debug_log "Provedores de letras: ${GREEN}$(format_lyrics_providers_display)${RES
 [ "$DEBUG" = true ] && debug_pause
 
 # ==================================================
+# VERIFICANDO ATUALIZAÇÕES DO SPOTDL
+# ==================================================
+spotdl_update
+
+# ==================================================
 # INÍCIO DO MENU PRINCIPAL
 # ==================================================
 menu_main
