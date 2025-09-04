@@ -11,11 +11,6 @@ disable_set_e() {
 	return $status
 }
 
-# Função auxiliar para mostrar cabeçalhos de seção
-print_section_header() {
-	fmt_section "$1"
-}
-
 # Função para perguntas sim/não
 prompt_yes_no() {
 	local prompt_msg="$1"
