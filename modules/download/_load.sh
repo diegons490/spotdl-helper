@@ -1,8 +1,12 @@
 #!/bin/bash
 # modules/download/_load.sh
-# Carregador de submódulos de download com logs aprimorados
+# Carregador de módulos de download com logs aprimorados
 
-# Lista de submódulos a carregar
+DOWNLOAD_MODULES_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+log_step "CARREGANDO MÓDULOS DE DOWNLOAD"
+
+# Lista de módulos a carregar (sem .sh)
 DOWNLOAD_MODULES=(
 	"config_vars"
 	"download_artist_albums"
@@ -14,14 +18,14 @@ DOWNLOAD_MODULES=(
 	"validate_links"
 )
 
-# Carregamento dos submódulos
-for submodule in "${DOWNLOAD_MODULES[@]}"; do
-	submodule_path="$(dirname "${BASH_SOURCE[0]}")/${submodule}.sh"
-	if [[ -f "$submodule_path" ]]; then
-		source "$submodule_path"
-		log_module_status "OK" "$submodule_path"
+# Carregamento dos módulos
+for module in "${DOWNLOAD_MODULES[@]}"; do
+	module_path="$DOWNLOAD_MODULES_DIR/${module}.sh"
+	if [[ -f "$module_path" ]]; then
+		source "$module_path"
+		log_module_status "OK" "$module_path"
 	else
-		log_module_status "FAIL" "$submodule_path"
+		log_module_status "FAIL" "$module_path"
 		exit 1
 	fi
 done

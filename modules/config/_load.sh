@@ -8,15 +8,16 @@ log_step "CARREGANDO MÓDULOS DE CONFIGURAÇÃO"
 
 # Lista de módulos em ordem de carregamento
 CONFIG_MODULES_ORDER=(
-	"config_env.sh"
-	"config_edit_options.sh"
-	"config_helper.sh"
-	"config_spotdl.sh"
-	"config_utils.sh"
+	"config_env"
+	"config_edit_options"
+	"config_helper"
+	"config_spotdl"
+	"config_utils"
 )
 
+# Carregamento dos módulos
 for module in "${CONFIG_MODULES_ORDER[@]}"; do
-	module_path="$CONFIG_MODULES_DIR/$module"
+	module_path="$CONFIG_MODULES_DIR/${module}.sh"
 	if [[ -f "$module_path" ]]; then
 		source "$module_path"
 		log_module_status "OK" "$module_path"

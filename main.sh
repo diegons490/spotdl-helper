@@ -1,5 +1,5 @@
 #!/bin/bash
-# main.sh - Script principal com modo debug
+# main.sh - Script principal do SpotDL Helper com modo debug
 
 # ==================================================
 # CONFIGURAÇÕES DE DEBUG
@@ -12,7 +12,7 @@ for arg in "$@"; do
 done
 
 # ==================================================
-# FUNÇÕES DE CORES (usando tput com fallback)
+# FUNÇÕES DE CORES
 # ==================================================
 init_colors() {
 	if command -v tput >/dev/null 2>&1; then
@@ -38,22 +38,20 @@ init_colors() {
 init_colors
 
 # ==================================================
-# FUNÇÕES DE LOGGING CENTRALIZADAS
+# FUNÇÕES DE LOGGING
 # ==================================================
 debug_log() {
 	[ "$DEBUG" = true ] || return
-	local timestamp
-	timestamp=$(date +"%T.%3N")
-	printf "${YELLOW}[DEBUG][$timestamp]${RESET} %s\n" "$*" >&2
+	local ts
+	ts=$(date +"%T.%3N")
+	printf "${YELLOW}[DEBUG][$ts]${RESET} %s\n" "$*" >&2
 }
-
 log_step() {
 	[ "$DEBUG" = true ] || return
-	printf "\n${CYAN}==================================================${RESET}\n" >&2
-	printf "${CYAN}==> $*${RESET}\n" >&2
-	printf "${CYAN}==================================================${RESET}\n\n" >&2
+	printf "\n${CYAN}==================================================${RESET}\n"
+	printf "${CYAN}==> $*${RESET}\n"
+	printf "${CYAN}==================================================${RESET}\n\n"
 }
-
 log_module_status() {
 	local status="$1" path="$2" name
 	name=$(basename "$path")
@@ -79,7 +77,7 @@ load_module() {
 }
 
 # ==================================================
-# DIRETÓRIOS E VARIÁVEIS ESSENCIAIS
+# VARIÁVEIS E DIRETÓRIOS ESSENCIAIS
 # ==================================================
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULES_DIR="$BASE_DIR/modules"
@@ -91,100 +89,73 @@ HELPER_CONFIG_DIR="$HOME/.spotdl-helper"
 SPOTDL_CONFIG_PATH="$SPOTDL_CONFIG_DIR/config.json"
 HELPER_CONFIG_PATH="$HELPER_CONFIG_DIR/helper-config.json"
 
+FINAL_DIR="$XDG_DOWNLOADS_DIR/SpotDL"
+
 # ==================================================
-# CARREGAR MÓDULOS DE FORMATAÇÃO (agora com cores hardcoded)
+# CARREGAMENTO DE MÓDULOS CORE
 # ==================================================
-log_step "CARREGANDO MÓDULOS DE FORMATAÇÃO"
 load_module "$MODULES_DIR/formatting/_load.sh"
-
-# ==================================================
-# CARREGAR MÓDULOS BASE
-# ==================================================
-log_step "CARREGANDO MÓDULOS BASE"
-for base in utils ui_prompts; do
-	load_module "$MODULES_DIR/${base}.sh"
-done
-
-# ==================================================
-# CARREGAR MÓDULOS DE CONFIGURAÇÃO
-# ==================================================
+load_module "$MODULES_DIR/ui/_load.sh"
+load_module "$MODULES_DIR/utils/_load.sh"
 load_module "$MODULES_DIR/config/_load.sh"
 
 # ==================================================
-# FUNÇÕES AUXILIARES
+# INICIALIZAÇÃO DE CONFIGURAÇÕES
 # ==================================================
 init_config_system() {
 	log_step "INICIALIZANDO SISTEMA DE CONFIGURAÇÃO"
 	mkdir -p "$SPOTDL_CONFIG_DIR" "$HELPER_CONFIG_DIR"
-	debug_log "${CYAN}Diretórios de configuração:${GREEN} criados/verificados${RESET}"
 
-	[[ -f "$SPOTDL_CONFIG_PATH" ]] || {
-		debug_log "${CYAN}Criando config:${GREEN} spotDL${RESET}"
-		save_spotdl_config
-	}
-	[[ -f "$HELPER_CONFIG_PATH" ]] || {
-		debug_log "${CYAN}Criando config:${GREEN} helper${RESET}"
-		save_helper_config
-	}
+	[[ -f "$SPOTDL_CONFIG_PATH" ]] || save_spotdl_config
+	[[ -f "$HELPER_CONFIG_PATH" ]] || save_helper_config
+
+	debug_log "${CYAN}Diretórios e configs criados/verificados${RESET}"
 }
-
-# ==================================================
-# INICIALIZAÇÃO
-# ==================================================
-log_step "INICIANDO SISTEMA"
-debug_log "${CYAN}Diretório base:${GREEN} $BASE_DIR${RESET}"
-debug_log "${CYAN}Diretório de módulos:${GREEN} $MODULES_DIR${RESET}"
-debug_log "${CYAN}Config spotDL:${GREEN} $SPOTDL_CONFIG_PATH${RESET}"
-debug_log "${CYAN}Config helper:${GREEN} $HELPER_CONFIG_PATH${RESET}"
-debug_log "${CYAN}Downloads padrão:${GREEN} $XDG_DOWNLOADS_DIR${RESET}"
 
 init_config_system
 
 # ==================================================
-# CARREGAR MÓDULOS FUNCIONAIS
+# CARREGAMENTO DE MÓDULOS ESPECÍFICOS
 # ==================================================
-log_step "CARREGANDO MÓDULOS DE DOWNLOADS"
 load_module "$MODULES_DIR/download/_load.sh"
-
-log_step "CARREGANDO MÓDULOS DO MANAGER SPOTDL"
 load_module "$MODULES_DIR/manage_spotdl/_load.sh"
-
-# Dependências
-load_module "$MODULES_DIR/dependencies.sh"
-
-# Menu
-load_module "$MODULES_DIR/menu.sh"
+load_module "$MODULES_DIR/enviroment/_load.sh"
+load_module "$MODULES_DIR/menu/_load.sh"
 
 # ==================================================
-# CARREGAR CONFIGURAÇÕES E IDIOMA
+# CARREGAMENTO DE CONFIGURAÇÕES E IDIOMA
 # ==================================================
-log_step "CARREGANDO CONFIGURAÇÕES"
-load_ui_strings "${CURRENT_LANG:-pt_BR}"
+log_step "CARREGAMENTO DE CONFIGURAÇÕES E IDIOMA"
+CURRENT_LANG="${CURRENT_LANG:-pt_BR}"
+load_ui_strings "$CURRENT_LANG"
 load_config
-debug_log "${CYAN}Configurações:${GREEN} carregadas${RESET}"
+debug_log "${CYAN}Configurações carregadas${RESET}"
 
 # ==================================================
-# VERIFICAÇÕES INICIAIS
+# VERIFICAÇÃO DE DEPENDÊNCIAS
 # ==================================================
 log_step "VERIFICANDO DEPENDÊNCIAS"
 check_dependencies || {
 	printf "${RED}Dependências faltando. Abortando.${RESET}\n"
 	exit 1
 }
-debug_log "${CYAN}Dependências:${GREEN} verificadas com sucesso${RESET}"
+debug_log "${CYAN}Dependências verificadas${RESET}"
 
+# ==================================================
+# VERIFICAÇÃO DO SPOTDL
+# ==================================================
 log_step "VERIFICANDO SPOTDL"
 if check_spotdl; then
 	debug_log "${CYAN}SpotDL verificado:${GREEN} $SPOTDL_CMD${RESET}"
 	spotdl_version=$("$SPOTDL_CMD" --version 2>/dev/null | grep -oP '[0-9]+\.[0-9]+\.[0-9]+' || echo "N/A")
 	debug_log "${CYAN}Versão SpotDL:${GREEN} $spotdl_version${RESET}"
 else
-	printf "${RED}Falha ao verificar spotDL. Abortando.${RESET}\n"
+	printf "${RED}Falha ao verificar SpotDL. Abortando.${RESET}\n"
 	exit 1
 fi
 
 # ==================================================
-# FUNÇÃO DE PAUSA NO DEBUG
+# FUNÇÃO DE PAUSA DEBUG
 # ==================================================
 debug_pause() {
 	[ "$DEBUG" = true ] || return
@@ -195,30 +166,27 @@ debug_pause() {
 }
 
 # ==================================================
-# EXECUÇÃO PRINCIPAL (MODO DEBUG)
+# EXIBIÇÃO DE CONFIGURAÇÕES ATUAIS (DEBUG)
 # ==================================================
-log_step "INICIANDO APLICAÇÃO"
-debug_log "${CYAN}Configurações atuais:${RESET}"
-debug_log "  ${CYAN}Idioma:${GREEN} $CURRENT_LANG${RESET}"
-debug_log "  ${CYAN}Diretório downloads:${GREEN} $FINAL_DIR${RESET}"
-debug_log "  ${CYAN}Template:${GREEN} $OUTPUT_STRUCTURE${RESET}"
-debug_log "  ${CYAN}Formato:${GREEN} ${EDITABLE_CONFIG[format]}${RESET}"
-debug_log "  ${CYAN}Bitrate:${GREEN} ${EDITABLE_CONFIG[bitrate]}${RESET}"
-debug_log "  ${CYAN}Threads:${GREEN} ${EDITABLE_CONFIG[threads]}${RESET}"
-debug_log "  ${CYAN}Gerar letras:${GREEN} ${EDITABLE_CONFIG[generate_lrc]}${RESET}"
-debug_log "  ${CYAN}Pular capa:${GREEN} ${EDITABLE_CONFIG[skip_album_art]}${RESET}"
-debug_log "  ${CYAN}Sincronizar sem deletar:${GREEN} ${EDITABLE_CONFIG[sync_without_deleting]}${RESET}"
-debug_log "  ${CYAN}Remover LRC na sincronização:${GREEN} ${EDITABLE_CONFIG[sync_remove_lrc]}${RESET}"
-debug_log "  ${CYAN}Sobrescrita:${GREEN} ${EDITABLE_CONFIG[overwrite]}${RESET}"
-debug_log "  ${CYAN}Sem cache:${GREEN} ${EDITABLE_CONFIG[no_cache]}${RESET}"
-debug_log "  ${CYAN}Máximo de backups:${GREEN} $MAX_BACKUPS${RESET}"
-debug_log "  ${CYAN}Provedores de letras:${GREEN} $(format_lyrics_providers_display)${RESET}"
+log_step "CONFIGURAÇÕES ATUAIS"
+debug_log "Idioma: ${GREEN}$CURRENT_LANG${RESET}"
+debug_log "Diretório downloads: ${GREEN}$FINAL_DIR${RESET}"
+debug_log "Template: ${GREEN}$OUTPUT_STRUCTURE${RESET}"
+debug_log "Formato: ${GREEN}${EDITABLE_CONFIG[format]}${RESET}"
+debug_log "Bitrate: ${GREEN}${EDITABLE_CONFIG[bitrate]}${RESET}"
+debug_log "Threads: ${GREEN}${EDITABLE_CONFIG[threads]}${RESET}"
+debug_log "Gerar letras: ${GREEN}${EDITABLE_CONFIG[generate_lrc]}${RESET}"
+debug_log "Pular capa: ${GREEN}${EDITABLE_CONFIG[skip_album_art]}${RESET}"
+debug_log "Sincronizar sem deletar: ${GREEN}${EDITABLE_CONFIG[sync_without_deleting]}${RESET}"
+debug_log "Remover LRC na sincronização: ${GREEN}${EDITABLE_CONFIG[sync_remove_lrc]}${RESET}"
+debug_log "Sobrescrita: ${GREEN}${EDITABLE_CONFIG[overwrite]}${RESET}"
+debug_log "Sem cache: ${GREEN}${EDITABLE_CONFIG[no_cache]}${RESET}"
+debug_log "Máximo de backups: ${GREEN}$MAX_BACKUPS${RESET}"
+debug_log "Provedores de letras: ${GREEN}$(format_lyrics_providers_display)${RESET}"
 
-if [ "$DEBUG" = true ]; then
-	debug_pause
-fi
+[ "$DEBUG" = true ] && debug_pause
 
 # ==================================================
-# CHAMADA DO MENU PRINCIPAL
+# INÍCIO DO MENU PRINCIPAL
 # ==================================================
-main_menu
+menu_main

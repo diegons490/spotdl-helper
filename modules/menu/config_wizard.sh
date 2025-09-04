@@ -1,80 +1,8 @@
 #!/bin/bash
-# modules/menu.sh
-# Menu principal e todos os submenus CLI
-
-main_menu() {
-	while true; do
-		clear
-		fmt_header "$(get_msg app_title)"
-
-		fmt_option "1" "$(get_msg menu_option1)"
-		fmt_option "2" "$(get_msg menu_option2)"
-		fmt_option "3" "$(get_msg menu_option3)"
-		fmt_option "4" "$(get_msg menu_option4)"
-		fmt_option "5" "$(get_msg menu_option5)"
-		fmt_option "6" "$(get_msg menu_option6)"
-		printf "\n"
-		fmt_option "0" "$(get_msg menu_option0)"
-
-		fmt_prompt "\n$(get_msg choose_option_menu)"
-		read -n 1 -r option
-
-		if ! [[ "$option" =~ ^[0-6]$ ]]; then
-			newline 2
-			fmt_error "$(get_msg invalid_option)"
-			newline
-			fmt_prompt "$(get_msg press_enter_continue)"
-			read -n 1 -r
-			continue
-		fi
-
-		case "$option" in
-		1) download_music ;;
-		2) download_playlists ;;
-		3) download_artist_albums ;;
-		4) sync_files ;;
-		5) settings ;;
-		6) manage_spotdl_menu ;;
-		0)
-			newline 2
-			fmt_info "$(get_msg exiting)..."
-			sleep 1
-			exit 0
-			;;
-		esac
-	done
-}
-
-# Menu de configurações
-settings() {
-	while true; do
-		clear
-		fmt_header "$(get_msg menu_option5)"
-
-		fmt_option "1" "$(get_msg config_interactive)"
-		fmt_option "2" "$(get_msg config_manual)"
-		printf "\n"
-		fmt_option "0" "$(get_msg menu_return)"
-
-		fmt_prompt "\n$(get_msg choose_option_menu)"
-		read -n 1 -r choice
-		echo
-
-		case "$choice" in
-		1) edit_config_interactively ;;
-		2) settings_manual ;;
-		0) return ;;
-		*)
-			newline
-			fmt_error "$(get_msg invalid_option)"
-			sleep 1
-			;;
-		esac
-	done
-}
-
+# modules/menu/edit_config_interactively.sh
 # Menu de configurações interativas
-edit_config_interactively() {
+
+config_wizard() {
 	# Declarar array associativo para configurações editáveis (global)
 	declare -gA EDITABLE_CONFIG
 
@@ -174,64 +102,6 @@ edit_config_interactively() {
 			newline
 			fmt_error "$(get_msg invalid_option)"
 			sleep 1.5
-			;;
-		esac
-	done
-}
-
-# Menu de configuração manual
-settings_manual() {
-	while true; do
-		clear
-		fmt_header "$(get_msg config_manual)"
-
-		fmt_option "1" "$(get_msg config_open_spotdl)"
-		fmt_option "2" "$(get_msg config_open_helper)"
-		printf "\n"
-		fmt_option "0" "$(get_msg menu_return)"
-
-		fmt_prompt "\n$(get_msg choose_option_menu)"
-		read -n 1 -r choice
-		echo
-
-		case "$choice" in
-		1) open_manual_config "spotdl" ;;
-		2) open_manual_config "helper" ;;
-		0) return ;;
-		*)
-			newline
-			fmt_error "$(get_msg invalid_option)"
-			sleep 1
-			;;
-		esac
-	done
-}
-
-# Menu de gerenciamento do SpotDL
-manage_spotdl_menu() {
-	while true; do
-		clear
-		fmt_header "$(get_msg menu_option6)"
-
-		fmt_option "1" "$(get_msg menu_update_spotdl)"
-		fmt_option "2" "$(get_msg menu_restore_backup)"
-		fmt_option "3" "$(get_msg menu_list_backups)"
-		printf "\n"
-		fmt_option "0" "$(get_msg menu_return)"
-
-		fmt_prompt "\n$(get_msg choose_option_menu)"
-		read -n 1 -r choice
-		echo
-
-		case "$choice" in
-		1) update_spotdl ;;
-		2) restore_backup ;;
-		3) manage_backups ;;
-		0) return ;;
-		*)
-			newline
-			fmt_error "$(get_msg invalid_option)"
-			sleep 1
 			;;
 		esac
 	done

@@ -1,8 +1,8 @@
 #!/bin/bash
-# modules/manage_spotdl/restore_backup.sh
+# modules/manage_spotdl/backup_restore.sh
 # Restaura backup selecionado
 
-restore_backup() {
+backup_restore() {
 	clear
 	fmt_header "$(get_msg menu_restore_backup)"
 	if [[ ! -d "$BACKUP_DIR" ]]; then

@@ -2,7 +2,7 @@
 # modules/manage_spotdl/manage_backups.sh
 # Lista backups e permite interação para deletar
 
-manage_backups() {
+backup_manage() {
 	clear
 	fmt_header "$(get_msg menu_list_backups)"
 
@@ -51,7 +51,7 @@ manage_backups() {
 
 		if [[ "$choice" =~ ^[1-9][0-9]*$ ]] && ((choice <= ${#files[@]})); then
 			local selected_file="${files[$((choice - 1))]}"
-			if prompt_yes_no "$(get_msg confirm_delete_backup) '$(basename "$selected_file")'?\n"; then
+			if prompt_yes_no_ansi "$(get_msg confirm_delete_backup) '$(basename "$selected_file")'?\n"; then
 				rm -f "$selected_file"
 				if [[ $? -eq 0 ]]; then
 					fmt_success "$(get_msg backup_deleted)\n"

@@ -1,9 +1,13 @@
 #!/bin/bash
 # modules/manage_spotdl/_load.sh
-# Carregador de submódulos de gerenciamento do SpotDL com logs aprimorados
+# Carregador de módulos de gerenciamento do SpotDL com logs aprimorados
+
+MANAGE_SPOTDL_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+log_step "CARREGANDO MÓDULOS DE GERENCIAMENTO DO SPOTDL"
 
 # Carregar arquivo de variáveis primeiro
-VARS_PATH="$(dirname "${BASH_SOURCE[0]}")/manage_spotdl_vars.sh"
+VARS_PATH="$MANAGE_SPOTDL_DIR/manage_spotdl_vars.sh"
 if [[ -f "$VARS_PATH" ]]; then
 	source "$VARS_PATH"
 	log_module_status "OK" "$VARS_PATH"
@@ -12,23 +16,23 @@ else
 	exit 1
 fi
 
-# Lista de submódulos a carregar
+# Lista de módulos a carregar
 MANAGE_SPOTDL_MODULES=(
+	"backup_manage"
+	"backup_restore"
 	"check_spotdl"
 	"get_backup_limit"
-	"manage_backups"
-	"restore_backup"
-	"update_spotdl"
+	"spotdl_update"
 )
 
-# Carregamento dos submódulos
-for submodule in "${MANAGE_SPOTDL_MODULES[@]}"; do
-	submodule_path="$(dirname "${BASH_SOURCE[0]}")/${submodule}.sh"
-	if [[ -f "$submodule_path" ]]; then
-		source "$submodule_path"
-		log_module_status "OK" "$submodule_path"
+# Carregamento dos módulos
+for module in "${MANAGE_SPOTDL_MODULES[@]}"; do
+	module_path="$MANAGE_SPOTDL_DIR/${module}.sh"
+	if [[ -f "$module_path" ]]; then
+		source "$module_path"
+		log_module_status "OK" "$module_path"
 	else
-		log_module_status "FAIL" "$submodule_path"
+		log_module_status "FAIL" "$module_path"
 		exit 1
 	fi
 done

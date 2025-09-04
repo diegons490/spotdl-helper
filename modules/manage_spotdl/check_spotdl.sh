@@ -20,7 +20,7 @@ check_spotdl() {
 		clear
 		fmt_warning "$(get_msg no_local_spotdl)\n"
 
-		if prompt_yes_no "$(get_msg download_latest_version)"; then
+		if prompt_yes_no_ansi "$(get_msg download_latest_version)"; then
 			newline
 			fmt_info "$(get_msg downloading_latest)"
 

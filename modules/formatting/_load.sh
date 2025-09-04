@@ -4,21 +4,23 @@
 
 FORMATTING_MODULES_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
+log_step "CARREGANDO MÓDULOS DE FORMATAÇÃO"
+
 # Lista de módulos em ordem de carregamento
 FORMATTING_MODULES=(
-	"core.sh"
-	"colors.sh"
-	"styles.sh"
-	"config.sh"
-	"messages.sh"
-	"messages_emoji.sh"
-	"visuals.sh"
-	"commands.sh"
+	"core"
+	"colors"
+	"styles"
+	"config"
+	"messages"
+	"messages_emoji"
+	"visuals"
+	"commands"
 )
 
-# Carregamento dos submódulos
+# Carregamento dos módulos
 for module in "${FORMATTING_MODULES[@]}"; do
-	module_path="$FORMATTING_MODULES_DIR/$module"
+	module_path="$FORMATTING_MODULES_DIR/${module}.sh"
 	if [[ -f "$module_path" ]]; then
 		source "$module_path"
 		log_module_status "OK" "$module_path"
