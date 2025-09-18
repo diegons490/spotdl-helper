@@ -2,12 +2,14 @@
 # main.sh - Script principal do SpotDL Helper com modo debug
 
 # ==================================================
-# CONFIGURAÇÕES DE DEBUG
+# CONFIGURAÇÕES DE DEBUG E TRACE
 # ==================================================
 DEBUG=false
+DEBUG_FULL=false
 for arg in "$@"; do
 	case "$arg" in
-	--debug | --verbose) DEBUG=true ;;
+	--debug) DEBUG=true ;;
+	--debug-full) DEBUG_FULL=true ;;
 	esac
 done
 
@@ -38,21 +40,32 @@ init_colors() {
 init_colors
 
 # ==================================================
-# FUNÇÕES DE LOGGING
+# ATIVA TRACE COMPLETO (DEBUG-FULL)
+# ==================================================
+if [ "$DEBUG_FULL" = true ]; then
+	export PS4="${YELLOW}++${RESET} "
+	set -x
+fi
+
+# ==================================================
+# FUNÇÕES DE LOG
 # ==================================================
 debug_log() {
-	[ "$DEBUG" = true ] || return
+	[ "$DEBUG" = true ] || [ "$DEBUG_FULL" = true ] || return
 	local ts
 	ts=$(date +"%T.%3N")
 	printf "${YELLOW}[DEBUG][$ts]${RESET} %s\n" "$*" >&2
 }
+
 log_step() {
-	[ "$DEBUG" = true ] || return
+	[ "$DEBUG" = true ] || [ "$DEBUG_FULL" = true ] || return
 	printf "\n${CYAN}==================================================${RESET}\n"
 	printf "${CYAN}==> $*${RESET}\n"
 	printf "${CYAN}==================================================${RESET}\n\n"
 }
+
 log_module_status() {
+	[ "$DEBUG" = true ] || [ "$DEBUG_FULL" = true ] || return
 	local status="$1" path="$2" name
 	name=$(basename "$path")
 	if [ "$status" = "OK" ]; then
