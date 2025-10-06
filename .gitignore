@@ -1,1 +1,5 @@
 /.vscode
+debug.conf
+debug.log
+debug.sh
+logs/debug_20250918_112956.log
