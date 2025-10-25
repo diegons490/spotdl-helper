@@ -132,7 +132,7 @@ init_config_system
 # ==================================================
 load_module "$MODULES_DIR/download/_load.sh"
 load_module "$MODULES_DIR/manage_spotdl/_load.sh"
-load_module "$MODULES_DIR/enviroment/_load.sh"
+load_module "$MODULES_DIR/environment/_load.sh"
 load_module "$MODULES_DIR/menu/_load.sh"
 
 # ==================================================
