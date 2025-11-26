@@ -3,17 +3,17 @@
 # Validações de links
 
 is_valid_track_link() {
-	[[ "$1" =~ open.spotify.com/track/ ]]
+    [[ "$1" =~ /track/ ]]
 }
 
 is_valid_album_link() {
-	[[ "$1" =~ open.spotify.com/album/ ]]
+    [[ "$1" =~ /album/ ]]
 }
 
 is_valid_playlist_link() {
-	[[ "$1" =~ open.spotify.com/playlist/ ]]
+    [[ "$1" =~ /playlist/ ]]
 }
 
 is_valid_artist_link() {
-	[[ "$1" =~ open.spotify.com/artist/ ]]
+    [[ "$1" =~ /artist/ ]]
 }
