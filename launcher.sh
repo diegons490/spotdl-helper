@@ -24,6 +24,9 @@ run_in_terminal() {
 	kgx)
 		kgx bash -c "$SCRIPT_PATH"
 		;;
+	ptyxis)
+		ptyxis -- bash -c "$SCRIPT_PATH"
+		;;
 	tilix)
 		tilix -e bash -c "$SCRIPT_PATH"
 		;;
@@ -64,7 +67,7 @@ run_in_terminal() {
 # Lista ordenada de terminais por prioridade
 TERMINALS=(
 	konsole yakuake tilix
-	gnome-terminal kgx
+	gnome-terminal kgx ptyxis
 	xfce4-terminal lxterminal terminator
 	alacritty kitty xterm urxvt eterm mate-terminal
 )
